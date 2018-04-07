@@ -20,7 +20,7 @@ def translate(request):
     if target is None or target == "":
         return HttpResponseNotFound('<h1>target language is not specified.</h1>')
 
-    translation_value = lenuga_translate(key=key, original=original, target=target)
+    translation_value = lenuga_translate(key=key, original=original.strip(), target=target)
 
     return JsonResponse({
         "data": {
