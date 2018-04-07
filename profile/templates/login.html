@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block content %}
+<style type="text/css">
+html,body{
+    height:100%;
+    background-color:#0048BA;
+}
+    .container {
+    height:100%;
+    display: flex;
+    align-items:center;
+    justify-content:space-between;
+    }
+    .jumbotron {
+        background-color:white;
+        width:400px;
+        border: 0.2 Solid black;
+    }
+</style>
+<div class="container">
+    <div class="jumbotron">
+        <h2>Log in to Lengua</h2>
+        {% if form.errors %}
+        <p style="color: red">Your username and password didn't match. Please try again.</p>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}"/>
+            {% for field in form %}
+            <p>
+                {{ field.label_tag }}<br>
+                {{ field }}<br>
+                {% for error in field.errors %}
+            <p style="color: red">{{ error }}</p>
+            {% endfor %}
+            {% if field.help_text %}
+            <p>
+                <small style="color: grey">{{ field.help_text }}</small>
+            </p>
+            {% endif %}
+            </p>
+            {% endfor %}
+            <button type="submit">Log in</button>
+            <a href="{% url 'signup' %}">New to Lengua? Sign up</a>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

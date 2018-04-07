@@ -6,7 +6,9 @@ import re
 from threading import Thread
 from queue import Queue
 import html
+from django.db.models import Q
 
+q_template = '&q={}'
 WEB_URL_REGEX = r'(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?'
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
@@ -67,7 +69,8 @@ def divide_string_with_link(raw_str):
 
 
 def translate_with_cache(key, original, target):
-    text = LenguaText.objects.filter(values__icontains="¾{}½".format(original))
+    text = LenguaText.objects.filter(
+        Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
 
     if len(text) == 0:
         gt_result = get_google_result(key, original, target)
@@ -98,6 +101,50 @@ def translate_with_cache(key, original, target):
     return translation_value
 
 
+def translate_multi_with_cache(key, originals, target):
+    stage1 = []
+    for original in originals:
+        text = LenguaText.objects.filter(values__icontains="¾{}½".format(original))
+        if len(text) == 0:
+            text = None
+        else:
+            text = text[0]
+            stage1.append(text)
+
+    stage2 = []
+    for result in stage1:
+        stage2.append("" if result is None else result.gettext(target))
+
+    google_q = ""
+    for key, original in enumerate(originals):
+        if stage2[key] is None:
+            google_q = google_q + q_template.format(original)
+    google_results = get_google_translation_array(None, q_template, target)[-1]
+
+    for key, original in enumerate(originals):
+        if stage2[key] is None:
+            gt_result = google_results.pop()
+        else:
+            continue
+
+        if stage1[key] is None:
+            from_language = gt_result['detectedSourceLanguage']
+            g_text = html.unescape(gt_result['translatedText'])
+            text = LenguaText()
+            text.uuid = uuid.uuid4()
+            text.add_translation(original, from_language)
+            text.add_translation(g_text, target)
+            text.save()
+        elif stage2[key] is None:
+            g_text = html.unescape(gt_result['translatedText'])
+            text = stage1[key]
+            text.add_translation(g_text, target)
+            text.save()
+            stage2[key] = g_text
+
+    return stage2
+
+
 def get_google_result(key, q, target):
     gt_result = r.get(r'https://www.googleapis.com/language/translate/v2', {
         'key': 'AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc',
@@ -109,6 +156,19 @@ def get_google_result(key, q, target):
     try:
         gt_result = gt_result.json()
         gt_result = gt_result['data']['translations'][-1]
+        return gt_result
+    except Exception:
+        return HttpResponseNotFound("<h1>Google Translate API mismatch</h1><br><br>{}".format(gt_result.content))
+
+
+def get_google_translation_array(key, q, target):
+    gt_result = r.get(
+        r'https://www.googleapis.com/language/translate/v2?key=AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc&target=' + target + q)
+    if not gt_result.ok:
+        return HttpResponseNotFound("<h1>Google Translate Error</h1><br><br>{}".format(gt_result.content))
+    try:
+        gt_result = gt_result.json()
+        gt_result = gt_result['data']['translations']
         return gt_result
     except Exception:
         return HttpResponseNotFound("<h1>Google Translate API mismatch</h1><br><br>{}".format(gt_result.content))
