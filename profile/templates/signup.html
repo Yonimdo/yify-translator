@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style type="text/css">
+html,body{
+    height:100%;
+    background-color:#0048BA;
+}
+    .container {
+    height:100%;
+    display: flex;
+    align-items:center;
+    justify-content:space-between;
+    }
+    .jumbotron {
+        background-color:white;
+        width:400px;
+        border: 0.2 Solid black;
+    }
+</style>
+
+
+<div class="container">
+    <div class="jumbotron">
+
+  <h2>{{title}}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <p>
+        {{ field.label_tag }}<br>
+        {{ field }}
+        {% if field.help_text %}
+          <small style="color: grey">{{ field.help_text }}</small>
+        {% endif %}
+        {% for error in field.errors %}
+          <p style="color: red">{{ error }}</p>
+        {% endfor %}
+      </p>
+    {% endfor %}
+    <button type="submit">{{title}}</button>
+  </form>
+  </div>
+  </div>
+{% endblock %}

@@ -2,7 +2,37 @@
 {% load staticfiles %}
 
 {% block content %}
-
+<style type="text/css">
+    .jumbotron {
+        background: #0048BA;
+        color: white;
+        padding-bottom: 80px
+    }
+    .jumbotron .btn-primary {
+        background: #3399ff;
+        border-color: #3399ff
+    }
+    .jumbotron .btn-primary:hover {
+        background: #0048BA
+    }
+    .jumbotron p {
+        color: #7CB9E8;
+        max-width: 75%;
+        margin: 1em auto 2em
+    }
+    .jumbotron .lang-logo {
+        display: block;
+        background: transparent;
+        border-radius: 50%;
+        overflow: hidden;
+        width: 142px;
+        height: 142px;
+        margin: auto;
+    }
+    .jumbotron .lang-logo img {
+        max-width: 100%
+    }
+</style>
 <div class="jumbotron text-center">
     <div class="container">
         <a href="/" class="lang-logo">
@@ -47,7 +77,8 @@
                 </li>
                 <li>If you wat to generate a new key from the Lengua CLI, run:</li>
                 <ul>
-                    <li><code>git clone https://github.com/syrmapp/lenuga-getting-started.git</code> - this will create a
+                    <li><code>git clone https://github.com/syrmapp/lenuga-getting-started.git</code> - this will create
+                        a
                         local copy of the source code for the app
                     </li>
                     <li><code>cd lenuga-getting-started</code> - change directory into the local source code repository

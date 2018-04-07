@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'dz/dropzone.css'%}"/>
+<!--<link rel="stylesheet" href="style.css" />-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+
+<script src="{% static 'dz/dropzone.js'%}"></script>
+
+<style type="text/css">
+html,body{
+    height:100%;
+    background-color:#0048BA;
+}
+    .container {
+    height:100%;
+    display: flex;
+    align-items:center;
+    justify-content:space-between;
+    }
+    .jumbotron {
+        background-color:white;
+        width:80%;
+        border: 0.2 Solid black;
+    }
+
+
+</style>
+
+
+<div class="container">
+    <div class="jumbotron">
+
+        <h2>{{title}}</h2>
+        <form id="upload" method="post" class="dropzone" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+            <p>
+                {{ field.label_tag }}<br>
+                {{ field }}
+                {% if field.help_text %}
+                <small style="color: grey">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+            <p style="color: red">{{ error }}</p>
+            {% endfor %}
+            </p>
+            {% endfor %}
+            <button type="submit">{{title}}</button>
+        </form>
+    </div>
+</div>
+
+<script>
+  $("form#upload").dropzone({url: "/"});
+
+</script>
+{% endblock %}
