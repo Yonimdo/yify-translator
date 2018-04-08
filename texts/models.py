@@ -19,3 +19,11 @@ class LenguaText(models.Model):
 
     def __str__(self):
         return self.values
+
+
+class OriginalText(models.Model):
+    text = models.ForeignKey(LenguaText, on_delete=models.CASCADE)
+    original = models.TextField()
+
+    def __str__(self):
+        return self.original

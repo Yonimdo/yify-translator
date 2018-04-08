@@ -1,7 +1,7 @@
 import uuid
 import requests as r
 from django.http import HttpResponseNotFound
-from texts.models import LenguaText
+from texts.models import LenguaText, OriginalText
 import re
 from threading import Thread
 from queue import Queue
@@ -73,15 +73,37 @@ def translate_with_cache(key, original, target):
         Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
 
     if len(text) == 0:
+        db_original = OriginalText.objects.filter(original=original)
+        if len(db_original) != 0:
+            text = [db_original[0].text]
+
+    if len(text) == 0:
         gt_result = get_google_result(key, original, target)
         try:
             from_language = gt_result['detectedSourceLanguage']
             g_text = html.unescape(gt_result['translatedText'])
-            text = LenguaText()
+            if from_language == target:
+                return g_text
+            gt_result_original = get_google_result(key, g_text, from_language)['translatedText']
+            g_text = get_google_result(key, gt_result_original, target)['translatedText']
+            text = LenguaText.objects.filter(
+                Q(values__icontains="¾{}½".format(gt_result_original)) | Q(
+                    values__endswith="¾{}".format(gt_result_original)))
+            if len(text) == 0:
+                text = LenguaText()
+                text.add_translation(gt_result_original, from_language)
+            else:
+                text = text[0]
+            # I Got it there needs to be a diffrante table named originals where we will link a translated_text to a Original
+            # In this way we wont translate back and wont translate twice
             text.uuid = uuid.uuid4()
-            text.add_translation(original, from_language)
             text.add_translation(g_text, target)
             text.save()
+            if gt_result_original != original:
+                db_original = OriginalText()
+                db_original.original = original
+                db_original.text = text
+                db_original.save()
         except Exception:
             return gt_result
     else:
