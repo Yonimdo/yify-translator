@@ -69,41 +69,26 @@ def divide_string_with_link(raw_str):
 
 
 def translate_with_cache(key, original, target):
+    # check if we have the original in the db.
     text = LenguaText.objects.filter(
         Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
 
     if len(text) == 0:
-        db_original = OriginalText.objects.filter(original=original)
-        if len(db_original) != 0:
-            text = [db_original[0].text]
-
-    if len(text) == 0:
-        gt_result = get_google_result(key, original, target)
+        gt_result = get_google_result(key, original, 'en')
         try:
             from_language = gt_result['detectedSourceLanguage']
-            g_text = html.unescape(gt_result['translatedText'])
-            if from_language == target:
-                return g_text
-            gt_result_original = get_google_result(key, g_text, from_language)['translatedText']
-            g_text = get_google_result(key, gt_result_original, target)['translatedText']
+            en_result = html.unescape(gt_result['translatedText'])
             text = LenguaText.objects.filter(
-                Q(values__icontains="¾{}½".format(gt_result_original)) | Q(
-                    values__endswith="¾{}".format(gt_result_original)))
+                Q(values__icontains="¾{}½".format(en_result)) | Q(values__endswith="¾{}".format(en_result)))
             if len(text) == 0:
+                if from_language == target:
+                    return original
                 text = LenguaText()
-                text.add_translation(gt_result_original, from_language)
+                text.uuid = uuid.uuid4()
+                text.add_translation(en_result, 'en')
+                text.save()
             else:
                 text = text[0]
-            # I Got it there needs to be a diffrante table named originals where we will link a translated_text to a Original
-            # In this way we wont translate back and wont translate twice
-            text.uuid = uuid.uuid4()
-            text.add_translation(g_text, target)
-            text.save()
-            if gt_result_original != original:
-                db_original = OriginalText()
-                db_original.original = original
-                db_original.text = text
-                db_original.save()
         except Exception:
             return gt_result
     else:
@@ -111,14 +96,25 @@ def translate_with_cache(key, original, target):
 
     translation_value = text.get_text(target)
     if translation_value is None:
-        gt_result = get_google_result(key, original, target)
+        gt_result = get_google_result(key, text.get_text('en'), target)
         try:
-            g_text = html.unescape(gt_result['translatedText'])
-            text.add_translation(g_text, target)
+            g_google = html.unescape(gt_result['translatedText'])
+            text.add_translation(g_google, target)
             text.save()
             translation_value = text.get_text(target)
         except Exception:
             return gt_result
+
+    db_original = OriginalText.objects.filter(original=original)
+    if len(db_original) != 0:
+        db_original = db_original[0]
+        db_original.count = db_original.count + 1
+        db_original.text = text
+    else:
+        db_original = OriginalText()
+        db_original.original = original
+        db_original.text = text
+    db_original.save()
 
     return translation_value
 
