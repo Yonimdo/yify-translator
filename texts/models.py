@@ -23,7 +23,8 @@ class LenguaText(models.Model):
 
 class OriginalText(models.Model):
     text = models.ForeignKey(LenguaText, on_delete=models.CASCADE)
+    count = models.IntegerField(default=1)
     original = models.TextField()
 
     def __str__(self):
-        return self.original
+        return "{}, count = {}".format(self.original, self.count)
