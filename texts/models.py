@@ -28,3 +28,15 @@ class OriginalText(models.Model):
 
     def __str__(self):
         return "{}, count = {}".format(self.original, self.count)
+
+
+class Suggestion(models.Model):
+    original = models.TextField()
+    translation = models.TextField()
+    user_translation = models.TextField()
+    from_language = models.TextField()
+    to_language = models.TextField()
+    count = models.IntegerField(default=1)
+
+    def __str__(self):
+        return "Google: {}, User = {}".format(self.translation, self.user_translation)

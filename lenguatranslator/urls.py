@@ -19,6 +19,6 @@ urlpatterns = [
     url(r'^$', hello.views.index, name='index'),
     url(r'^db', hello.views.db, name='db'),
     url(r'^profile/', include(p_urls), name='translate'),
-    url(r'^translate', include(t_urls), name='translate'),
+    url(r'^api/', include(t_urls), name='translate'),
     path('admin/', admin.site.urls),
 ]
