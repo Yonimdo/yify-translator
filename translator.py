@@ -41,7 +41,7 @@ def translate(key, original, target):
         t.join()
 
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
-    return "".join([t_queue.get() for key, is_text, text, target, t_queue in texts])
+    return " ".join([t_queue.get() for key, is_text, text, target, t_queue in texts]).replace("  "," ")
 
 
 def translate_thread(key, is_text, text, target, t_queue):
