@@ -9,7 +9,7 @@ import html
 from django.db.models import Q
 
 q_template = '&q={}'
-WEB_URL_REGEX = r'(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?'
+WEB_URL_REGEX = r'((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
 str = '''
@@ -41,7 +41,7 @@ def translate(key, original, target):
         t.join()
 
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
-    return " ".join([t_queue.get() for key, is_text, text, target, t_queue in texts])
+    return "".join([t_queue.get() for key, is_text, text, target, t_queue in texts])
 
 
 def translate_thread(key, is_text, text, target, t_queue):
@@ -58,13 +58,14 @@ def divide_string_with_link(raw_str):
         # There is no links just return the text.
         return [(raw_str, TRANSLATABLE)]
     while len(links) > 0:
-        link = ''.join(links.pop())
+        link = links.pop()[0]
         before_link = raw_str.split(link)[0]
         raw_str = raw_str.replace(before_link + link, "")
         strs.append((before_link, TRANSLATABLE if before_link != "\n"
                                                   and before_link != " "
                                                   and before_link != "" else NOT_TRANSLATABLE))
         strs.append((link, NOT_TRANSLATABLE))
+    strs.append((raw_str, TRANSLATABLE))
     return strs
 
 
