@@ -128,7 +128,7 @@ def translate_with_cache(key, original, target):
             return gt_result
 
     Thread(target=save_original, kwargs={"text": text, "original": original}).start()
-    return translation_value
+    return return_numbers(translation_value, numbers)
 
 
 def translate_multi_with_cache(key, originals, target):
