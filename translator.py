@@ -10,7 +10,7 @@ from django.db.models import Q
 
 q_template = '&q={}'
 WEB_URL_REGEX = r'((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
-NUMBERS_REGEX = r'(([^ \n]+)?[0-9]+([^ \n]+)?)'
+NUMBERS_REGEX = r'(([^ ,.\n]+)?[0-9]+([^ ,.\n]+)?)'
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
 str = '''
