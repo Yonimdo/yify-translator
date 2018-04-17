@@ -10,6 +10,7 @@ from django.db.models import Q
 
 q_template = '&q={}'
 WEB_URL_REGEX = r'((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
+NUMBERS_REGEX = r'(([^ .a-z]+)?[0-9~!@#$%^&()_\-+=]+([^ .a-z]+)?)'
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
 str = '''
@@ -41,7 +42,7 @@ def translate(key, original, target):
         t.join()
 
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
-    return "".join([t_queue.get() for key, is_text, text, target, t_queue in texts])
+    return " ".join([t_queue.get() for key, is_text, text, target, t_queue in texts]).replace("  ", " ")
 
 
 def translate_thread(key, is_text, text, target, t_queue):
@@ -71,6 +72,7 @@ def divide_string_with_link(raw_str):
 
 def translate_with_cache(key, original, target):
     # check if we have the original in the db.
+    original, numbers = escape_numbers(original)
     text = LenguaText.objects.filter(
         Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
 
@@ -117,7 +119,7 @@ def translate_with_cache(key, original, target):
         db_original.text = text
     db_original.save()
 
-    return translation_value
+    return return_numbers(translation_value, numbers)
 
 
 def translate_multi_with_cache(key, originals, target):
@@ -191,3 +193,36 @@ def get_google_translation_array(key, q, target):
         return gt_result
     except Exception:
         return HttpResponseNotFound("<h1>Google Translate API mismatch</h1><br><br>{}".format(gt_result.content))
+
+
+def escape_numbers(raw_str):
+    strs = []
+    numbers = []
+    links = re.findall(NUMBERS_REGEX, raw_str)[::-1]
+    if len(links) == 0:
+        # There is no links just return the text.
+        return raw_str, numbers
+    while len(links) > 0:
+        number = links.pop()[0]
+        before_link = raw_str.split(number)[0]
+        raw_str = raw_str.replace(before_link + number, "")
+        strs.append(before_link + '18')
+        numbers.append(number)
+    strs.append(raw_str)
+    return "".join(strs), numbers
+
+
+def return_numbers(raw_str, numbers):
+    if len(numbers) == 0:
+        # There is no links just return the text.
+        return raw_str
+    strs = []
+    numbers = numbers[::-1]
+    links = re.findall('18', raw_str)[::-1]
+    while len(links) > 0:
+        fake = links.pop()
+        before_link = raw_str.split(fake)[0]
+        raw_str = raw_str.replace(before_link + fake, "")
+        strs.append(before_link + numbers.pop())
+    strs.append(raw_str)
+    return "".join(strs)
