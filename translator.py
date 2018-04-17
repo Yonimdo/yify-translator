@@ -70,17 +70,37 @@ def divide_string_with_link(raw_str):
     return strs
 
 
+def save_original(text, original):
+    db_original = OriginalText.objects.filter(original=original)
+    if len(db_original) != 0:
+        db_original = db_original[0]
+        db_original.count = db_original.count + 1
+        db_original.text = text
+    else:
+        db_original = OriginalText()
+        db_original.original = original
+        db_original.text = text
+    db_original.save()
+
+
 def translate_with_cache(key, original, target):
-    # check if we have the original in the db.
     original, numbers = escape_numbers(original)
+    # check in the db.
     text = LenguaText.objects.filter(
         Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
+
+    # check if we have the original in the ORIGINAL db.
+    if len(text) == 0:
+        db_original = OriginalText.objects.filter(original=original)
+        if len(db_original) != 0:
+            text = [db_original[0].text]
 
     if len(text) == 0:
         gt_result = get_google_result(key, original, 'en')
         try:
             from_language = gt_result['detectedSourceLanguage']
             en_result = html.unescape(gt_result['translatedText'])
+            # Check if we have it in english maybe?
             text = LenguaText.objects.filter(
                 Q(values__icontains="¾{}½".format(en_result)) | Q(values__endswith="¾{}".format(en_result)))
             if len(text) == 0:
@@ -101,25 +121,14 @@ def translate_with_cache(key, original, target):
     if translation_value is None:
         gt_result = get_google_result(key, text.get_text('en'), target)
         try:
-            g_google = html.unescape(gt_result['translatedText'])
-            text.add_translation(g_google, target)
+            translation_value = html.unescape(gt_result['translatedText'])
+            text.add_translation(translation_value, target)
             text.save()
-            translation_value = text.get_text(target)
         except Exception:
             return gt_result
 
-    db_original = OriginalText.objects.filter(original=original)
-    if len(db_original) != 0:
-        db_original = db_original[0]
-        db_original.count = db_original.count + 1
-        db_original.text = text
-    else:
-        db_original = OriginalText()
-        db_original.original = original
-        db_original.text = text
-    db_original.save()
-
-    return return_numbers(translation_value, numbers)
+    Thread(target=save_original, kwargs={"text": text, "original": original}).start()
+    return translation_value
 
 
 def translate_multi_with_cache(key, originals, target):
