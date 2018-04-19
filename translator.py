@@ -1,7 +1,8 @@
 import uuid
 import requests as r
+from IPython.core.hooks import deprecated
 from django.http import HttpResponseNotFound
-from texts.models import LenguaText, OriginalText
+from texts.models import LenguaText, OriginalText, SmartText
 import re
 from threading import Thread
 from queue import Queue
@@ -82,7 +83,6 @@ def save_original(text, original):
         db_original.text = text
     db_original.save()
 
-
 def translate_with_cache(key, original, target):
     original, numbers = escape_numbers(original)
     # check in the db.
@@ -116,6 +116,59 @@ def translate_with_cache(key, original, target):
             return gt_result
     else:
         text = text[0]
+
+    translation_value = text.get_text(target)
+    if translation_value is None:
+        gt_result = get_google_result(key, text.get_text('en'), target)
+        try:
+            translation_value = html.unescape(gt_result['translatedText'])
+            text.add_translation(translation_value, target)
+            text.save()
+        except Exception:
+            return gt_result
+
+    Thread(target=save_original, kwargs={"text": text, "original": original}).start()
+    return return_numbers(translation_value, numbers)
+
+
+def translate_with_smart_cache(key, original, target):
+    original, numbers = escape_numbers(original)
+    # check in the db.
+    smart = SmartText.objects.filter(Q(text=original))
+
+    # check if we have the original in the ORIGINAL db.
+    if len(smart) == 0:
+        db_original = OriginalText.objects.filter(original=original)
+        if len(db_original) != 0:
+            smart = SmartText()
+            smart.text_origin = [db_original[0].text]
+
+    if len(smart) == 0:
+        gt_result = get_google_result(key, original, 'en')
+        try:
+            from_language = gt_result['detectedSourceLanguage']
+            en_result = html.unescape(gt_result['translatedText'])
+            # Check if we have it in english maybe?
+            # check in the db.
+            smart = SmartText.objects.filter(Q(text=en_result))
+            if len(smart) == 0:
+                if from_language == target:
+                    return original
+                text = LenguaText()
+                text.uuid = uuid.uuid4()
+                text.add_translation(en_result, 'en')
+                text.save()
+                s_text = SmartText()
+                s_text.text_origin = text
+                s_text.language = text
+                s_text.text = text
+                s_text.save()
+            else:
+                text = smart[0].text_origin
+        except Exception:
+            return gt_result
+    else:
+        text = smart[0].text_origin
 
     translation_value = text.get_text(target)
     if translation_value is None:
