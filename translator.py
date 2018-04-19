@@ -96,8 +96,9 @@ def translate_with_smart_cache(key, original, target):
     if len(smart) == 0:
         db_original = OriginalText.objects.filter(original=original)
         if len(db_original) != 0:
-            smart = [SmartText()]
+            smart = SmartText()
             smart.text_origin = db_original[0].text
+            smart = [smart]
     else:
         tmp = smart[0]
         tmp.count = tmp.count + 1
