@@ -19,6 +19,7 @@ from django.urls import path, include
 from . import views
 
 urlpatterns = [
+    path('data', views.getdata),
     path('translate', views.translate),
     path('suggestion', views.suggestion),
 ]
