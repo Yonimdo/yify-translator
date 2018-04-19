@@ -1,6 +1,5 @@
 import uuid
 import requests as r
-from IPython.core.hooks import deprecated
 from django.http import HttpResponseNotFound
 from texts.models import LenguaText, OriginalText, SmartText
 import re
