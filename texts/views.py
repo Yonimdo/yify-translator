@@ -1,8 +1,5 @@
 import json
 
-from django.contrib.auth.decorators import login_required
-from django.core.serializers import serialize
-from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_exempt
 
