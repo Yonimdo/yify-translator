@@ -47,7 +47,7 @@ def translate(key, original, target):
 
 def translate_thread(key, is_text, text, target, t_queue):
     if is_text == TRANSLATABLE:
-        t_queue.put(translate_with_cache(key, text, target))
+        t_queue.put(translate_with_smart_cache(key, text, target))
     else:
         t_queue.put(text)
 
@@ -82,58 +82,15 @@ def save_original(text, original):
         db_original.text = text
     db_original.save()
 
-def translate_with_cache(key, original, target):
-    original, numbers = escape_numbers(original)
-    # check in the db.
-    text = LenguaText.objects.filter(
-        Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
-
-    # check if we have the original in the ORIGINAL db.
-    if len(text) == 0:
-        db_original = OriginalText.objects.filter(original=original)
-        if len(db_original) != 0:
-            text = [db_original[0].text]
-
-    if len(text) == 0:
-        gt_result = get_google_result(key, original, 'en')
-        try:
-            from_language = gt_result['detectedSourceLanguage']
-            en_result = html.unescape(gt_result['translatedText'])
-            # Check if we have it in english maybe?
-            text = LenguaText.objects.filter(
-                Q(values__icontains="¾{}½".format(en_result)) | Q(values__endswith="¾{}".format(en_result)))
-            if len(text) == 0:
-                if from_language == target:
-                    return original
-                text = LenguaText()
-                text.uuid = uuid.uuid4()
-                text.add_translation(en_result, 'en')
-                text.save()
-            else:
-                text = text[0]
-        except Exception:
-            return gt_result
-    else:
-        text = text[0]
-
-    translation_value = text.get_text(target)
-    if translation_value is None:
-        gt_result = get_google_result(key, text.get_text('en'), target)
-        try:
-            translation_value = html.unescape(gt_result['translatedText'])
-            text.add_translation(translation_value, target)
-            text.save()
-        except Exception:
-            return gt_result
-
-    Thread(target=save_original, kwargs={"text": text, "original": original}).start()
-    return return_numbers(translation_value, numbers)
-
 
 def translate_with_smart_cache(key, original, target):
+    # check in the db.
+    # text = LenguaText.objects.filter(
+    #    Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
+    # very slow ^^
     original, numbers = escape_numbers(original)
     # check in the db.
-    smart = SmartText.objects.filter(Q(text=original))
+    smart = SmartText.objects.filter(text=original)
 
     # check if we have the original in the ORIGINAL db.
     if len(smart) == 0:
@@ -141,6 +98,10 @@ def translate_with_smart_cache(key, original, target):
         if len(db_original) != 0:
             smart = SmartText()
             smart.text_origin = [db_original[0].text]
+    else:
+        tmp = smart[0]
+        tmp.count = tmp.count + 1
+        tmp.save()
 
     if len(smart) == 0:
         gt_result = get_google_result(key, original, 'en')
@@ -149,7 +110,7 @@ def translate_with_smart_cache(key, original, target):
             en_result = html.unescape(gt_result['translatedText'])
             # Check if we have it in english maybe?
             # check in the db.
-            smart = SmartText.objects.filter(Q(text=en_result))
+            smart = SmartText.objects.filter(text=en_result)
             if len(smart) == 0:
                 if from_language == target:
                     return original
@@ -157,11 +118,7 @@ def translate_with_smart_cache(key, original, target):
                 text.uuid = uuid.uuid4()
                 text.add_translation(en_result, 'en')
                 text.save()
-                s_text = SmartText()
-                s_text.text_origin = text
-                s_text.language = text
-                s_text.text = text
-                s_text.save()
+                save_smart(en_result, text, 'en')
             else:
                 text = smart[0].text_origin
         except Exception:
@@ -176,11 +133,27 @@ def translate_with_smart_cache(key, original, target):
             translation_value = html.unescape(gt_result['translatedText'])
             text.add_translation(translation_value, target)
             text.save()
-        except Exception:
+            save_smart(translation_value, text, target)
+        except Exception as e:
             return gt_result
 
     Thread(target=save_original, kwargs={"text": text, "original": original}).start()
     return return_numbers(translation_value, numbers)
+
+
+def save_smart(key, text, language):
+    smart = SmartText.objects.filter(text=key)
+    if len(smart) != 0:
+        smart = smart[0]
+        smart.count = smart.count + 1
+        smart.text = key
+        smart.text_origin = text
+    else:
+        smart = SmartText()
+        smart.language = language
+        smart.text = key
+        smart.text_origin = text
+    smart.save()
 
 
 def translate_multi_with_cache(key, originals, target):
