@@ -14,7 +14,7 @@ class LenguaText(models.Model):
         self.values = "½".join(["{}¾{}".format(key, value) for (key, value) in list.items()])
 
     def get_text(self, language="XX"):
-        self.list = self.get_list(self)
+        self.list = self.get_list()
         return self.list.get(language, None)
 
     def get_list(self):
