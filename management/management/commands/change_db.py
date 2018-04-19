@@ -12,13 +12,19 @@ class Command(BaseCommand):
     help = "Change the db"
 
     def handle(self, *args, **options):
+        for sm in SmartText.objects.all():
+            sm.delete()
+
         texts = LenguaText.objects.all()
         for text_origin in texts:
-            languages = text_origin.get_list()
-            for key in languages:
-                text = languages[key]
-                s_text = SmartText()
-                s_text.text_origin = text_origin
-                s_text.language = key
-                s_text.text = text
-                s_text.save()
+            try:
+                languages = text_origin.get_list()
+                for key in languages:
+                    text = languages[key]
+                    s_text = SmartText()
+                    s_text.text_origin = text_origin
+                    s_text.language = key
+                    s_text.text = text
+                    s_text.save()
+            except Exception as e:
+                text_origin.delete()
