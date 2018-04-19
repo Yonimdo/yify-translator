@@ -1,10 +1,34 @@
 import json
 
+from django.contrib.auth.decorators import login_required
+from django.core.serializers import serialize
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_exempt
 
-from texts.models import Suggestion
+from texts.models import Suggestion, LenguaText
 from translator import translate as lenuga_translate
+
+
+class LazyEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        return str(obj)
+
+@login_required()
+def getdata(request):
+    if request.GET is None:
+        return HttpResponseNotFound('<h1>Page not found</h1>')
+
+    key = request.GET.get('key', None)
+    original = request.GET.get('q', None)
+    target = request.GET.get('target', None)
+
+    if key != 'AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc':
+        return HttpResponseNotFound('<h1>Key not found.</h1>')
+
+    return JsonResponse(serialize('json', LenguaText.objects.all(), cls=LazyEncoder),
+                        json_dumps_params={'ensure_ascii': False}, safe=False)
+
 
 @csrf_exempt
 def translate(request):
@@ -35,6 +59,7 @@ def translate(request):
         }
     }, json_dumps_params={'ensure_ascii': False}, safe=False)
 
+
 @csrf_exempt
 def suggestion(request):
     if request.GET is None:
@@ -43,11 +68,11 @@ def suggestion(request):
     data = json.loads(request.body.decode('utf-8'))
 
     sg = Suggestion()
-    sg.original = data.get('original','')
-    sg.translation = data.get('translation','')
-    sg.user_translation = data.get('user_translation','')
-    sg.from_language = data.get('from_language','')
-    sg.to_language = data.get('to_language','')
+    sg.original = data.get('original', '')
+    sg.translation = data.get('translation', '')
+    sg.user_translation = data.get('user_translation', '')
+    sg.from_language = data.get('from_language', '')
+    sg.to_language = data.get('to_language', '')
     sg.save()
 
     return JsonResponse({}, json_dumps_params={'ensure_ascii': False}, safe=False)
