@@ -3,12 +3,6 @@
 
 {% block content %}
 
-<link rel="stylesheet" href="{% static 'dz/dropzone.css'%}"/>
-<!--<link rel="stylesheet" href="style.css" />-->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
-
-<script src="{% static 'dz/dropzone.js'%}"></script>
-
 <style type="text/css">
 html,body{
     height:100%;
@@ -34,7 +28,7 @@ html,body{
     <div class="jumbotron">
 
         <h2>{{title}}</h2>
-        <form id="upload" method="post" class="dropzone" enctype="multipart/form-data">
+        <form  method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {% for field in form %}
             <p>
@@ -54,7 +48,5 @@ html,body{
 </div>
 
 <script>
-  $("form#upload").dropzone({url: "/"});
-
 </script>
 {% endblock %}
