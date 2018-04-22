@@ -28,15 +28,14 @@ def signup(request):
 @login_required()
 def translate_file(request):
     if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            file_extention = form['file'].value().name.split('.').pop()
-            file_data = form['file'].value().read().decode('utf-8')
-            file_data = translator.translate_file('', file_data, 'fr', file_extention)
-            return HttpResponse(file_data, content_type='text/xml')
+        lanugages = request.POST.getlist('languages[]')
+        file = request.FILES['file']
+        file_extention = file.name.split('.').pop()
+        file_data = file.read().decode('utf-8')
+        file_data = translator.translate_file('', file_data, 'fr', file_extention)
+        return HttpResponse(file_data, content_type='text/xml')
     else:
-        form = UploadFileForm()
-    return render(request, 'file_upload.html', {'form': form, "title": "Translate File:", "languages" : settings.LANGUAGES})
+        return render(request, 'file_upload.html', {"title": "Translate File:", "languages": settings.LANGUAGES})
 
 
     # UploadFileForm
