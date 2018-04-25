@@ -32,7 +32,7 @@ def translate_file(request):
         file = request.FILES['file']
         file_extention = file.name.split('.').pop()
         file_data = file.read().decode('utf-8')
-        file_data = translator.translate_file('', file_data, 'fr', file_extention)
+        file_data = translator.translate_file_to_targets('', file_data, lanugages, file_extention)
         return HttpResponse(file_data, content_type='text/xml')
     else:
         return render(request, 'file_upload.html', {"title": "Translate File:", "languages": settings.LANGUAGES})

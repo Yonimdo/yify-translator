@@ -88,7 +88,7 @@ input::-webkit-file-upload-button {
             <label for="select-language">to:</label>
             <select id="select-language" name="languages[]" multiple class="selectized"
                     placeholder="Select languages..." tabindex="-1">
-                {%for lang, name in languages %}
+                {%for lang, name, stop in languages %}
                 <option value="{{lang}}" selected="selected">{{name}}</option>
                 {%endfor%}
             </select>

@@ -8,8 +8,9 @@ from queue import Queue
 import html
 from django.db.models import Q
 
+# is link or is dot+
 q_template = '&q={}'
-WEB_URL_REGEX = r'((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
+WEB_URL_REGEX = r'(([\.。។।။]+)|(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
 NUMBERS_REGEX = r'(([^ ,.\n]+)?[0-9]+([^ ,.\n]+)?)'
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
@@ -32,7 +33,7 @@ def translate(key, original, target):
     :param target: The target language
     :return: VALID Translated String Or 404
     '''
-    texts = divide_string_with_link(original)
+    texts = divide_string_with_link(original, target)
     texts = [(key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
     for text in texts:
@@ -69,7 +70,7 @@ def translate_file(key, original, target, content_type):
     while ctr < len(file_lines):
         line, is_translatable = file_lines[ctr]
         if is_translatable == TRANSLATABLE:
-            tmp = divide_string_with_link(line)
+            tmp = divide_string_with_link(line, target)
             file_lines[ctr:ctr + 1] = tmp
             ctr = ctr + len(tmp)
         ctr = ctr + 1
@@ -88,7 +89,24 @@ def translate_file(key, original, target, content_type):
         else:
             result_file.append(line)
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
-    return " ".join(result_file).replace("  "," ")
+    return " ".join(result_file).replace("  ", " ")
+
+
+def translate_file_to_targets(key, text, target, content_type):
+    threads = []
+    files = {}
+    for t in target:
+        q = Queue()
+        thread = Thread(target=file_thread, args=(key, text, t, content_type, q))
+        threads.append((t, thread, q))
+        thread.start()
+    for t, thread, q in threads:
+        files[t] = q.get()
+    return files
+
+
+def file_thread(key, text, target, content_type, t_queue):
+    t_queue.put(translate_file(key, text, target, content_type))
 
 
 def translate_thread(key, is_text, text, target, t_queue):
@@ -98,7 +116,20 @@ def translate_thread(key, is_text, text, target, t_queue):
         t_queue.put(text)
 
 
-def divide_string_with_link(raw_str):
+def translate_dot(target):
+    if target == 'km':
+        return '។'
+    elif target == 'ja' or target.startswith('zh'):
+        return '。'
+    elif target == 'my':
+        return '။'
+    elif target in ('bn', 'ne', 'hi'):
+        return '।'
+    else:
+        return "."
+
+
+def divide_string_with_link(raw_str, target):
     strs = []
     links = re.findall(WEB_URL_REGEX, raw_str)[::-1]
     if len(links) == 0:
@@ -106,6 +137,9 @@ def divide_string_with_link(raw_str):
         return [(raw_str, TRANSLATABLE)]
     while len(links) > 0:
         link = links.pop()[0]
+        if re.match(r"[\.。។।။]+", link):
+            link = re.sub(r"[\.。។।။]+", translate_dot(target), link)
+            raw_str = re.sub(r"[\.。។।။]+", translate_dot(target), raw_str)
         before_link = raw_str.split(link)[0]
         raw_str = raw_str.replace(before_link + link, "")
         strs.append((before_link, TRANSLATABLE if before_link != "\n"
@@ -163,6 +197,8 @@ def translate_with_smart_cache(key, original, target):
     #    Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
     # very slow ^^
     original, numbers = escape_numbers(original)
+    # if original.strip() == '18':
+    # return return_numbers(original,numbers)
     # check in the db.
     smart = SmartText.objects.filter(text=original)
 
