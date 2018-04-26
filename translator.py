@@ -8,10 +8,9 @@ from queue import Queue
 import html
 from django.db.models import Q
 
-# is link or is dot+
 q_template = '&q={}'
-WEB_URL_REGEX = r'(([\.。។।။]+)|(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
-NUMBERS_REGEX = r'(([^ ,.\n]+)?[0-9]+([^ ,.\n]+)?)'
+WEB_URL_REGEX = r'((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
+NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
 MAX_WORD_FOR_REQUEST = 80
@@ -20,7 +19,6 @@ The regex patterns in this gist are intended only to match web URLs -- http,
 https, and naked https://play.google.com/store/apps/details?id=com.facebook.katana domains like "example.com". For a pattern that attempts to
 match all URLs, regardless of protocol, see: https://gist.github.com/gruber/249502
 '''
-
 
 def translate(key, original, target):
     '''
@@ -33,7 +31,7 @@ def translate(key, original, target):
     :param target: The target language
     :return: VALID Translated String Or 404
     '''
-    texts = divide_string_with_link(original, target)
+    texts = divide_string_with_link(original)
     texts = [(key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
     for text in texts:
@@ -70,7 +68,7 @@ def translate_file(key, original, target, content_type):
     while ctr < len(file_lines):
         line, is_translatable = file_lines[ctr]
         if is_translatable == TRANSLATABLE:
-            tmp = divide_string_with_link(line, target)
+            tmp = divide_string_with_link(line)
             file_lines[ctr:ctr + 1] = tmp
             ctr = ctr + len(tmp)
         ctr = ctr + 1
@@ -116,20 +114,7 @@ def translate_thread(key, is_text, text, target, t_queue):
         t_queue.put(text)
 
 
-def translate_dot(target):
-    if target == 'km':
-        return '។'
-    elif target == 'ja' or target.startswith('zh'):
-        return '。'
-    elif target == 'my':
-        return '။'
-    elif target in ('bn', 'ne', 'hi'):
-        return '।'
-    else:
-        return "."
-
-
-def divide_string_with_link(raw_str, target):
+def divide_string_with_link(raw_str):
     strs = []
     links = re.findall(WEB_URL_REGEX, raw_str)[::-1]
     if len(links) == 0:
@@ -137,9 +122,6 @@ def divide_string_with_link(raw_str, target):
         return [(raw_str, TRANSLATABLE)]
     while len(links) > 0:
         link = links.pop()[0]
-        if re.match(r"[\.。។।။]+", link):
-            link = re.sub(r"[\.。។।။]+", translate_dot(target), link)
-            raw_str = re.sub(r"[\.。។।။]+", translate_dot(target), raw_str)
         before_link = raw_str.split(link)[0]
         raw_str = raw_str.replace(before_link + link, "")
         strs.append((before_link, TRANSLATABLE if before_link != "\n"
@@ -197,8 +179,6 @@ def translate_with_smart_cache(key, original, target):
     #    Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
     # very slow ^^
     original, numbers = escape_numbers(original)
-    # if original.strip() == '18':
-    # return return_numbers(original,numbers)
     # check in the db.
     smart = SmartText.objects.filter(text=original)
 
@@ -224,7 +204,7 @@ def translate_with_smart_cache(key, original, target):
             smart = SmartText.objects.filter(text=en_result)
             if len(smart) == 0:
                 if from_language == target:
-                    return original
+                    return return_numbers(original,numbers)
                 text = LenguaText()
                 text.uuid = uuid.uuid4()
                 text.add_translation(en_result, 'en')
