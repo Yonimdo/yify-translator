@@ -11,7 +11,7 @@ from dauditlog.views import auditit
 from texts.models import LenguaText, OriginalText, SmartText
 
 q_template = '&q={}'
-WEB_URL_REGEX = r'[ ]?((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))[ ]?'
+WEB_URL_REGEX = r'(([ ]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ]+)?|(([ ]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ]+)?))'
 NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
 DOTS_REGEX = re.compile(r'([\.。។।။]+)( )?')
 TRANSLATABLE = 'text'
@@ -44,13 +44,14 @@ def array_divide_dots(log, texts, target):
     while ctr < len(texts):
         text, is_text = texts[ctr]
         if is_text == TRANSLATABLE:
-
             paragraphs = DOTS_REGEX.split(text.strip())
-            while not paragraphs[-1]:
+            while paragraphs and not paragraphs[-1]:
                 del paragraphs[-1]
+            del texts[ctr]
+            if not paragraphs:
+                continue
             paragraphs = paragraphs[::-1]
             sentences = []
-            del texts[ctr]
             while len(paragraphs):
                 popped = paragraphs.pop()
                 if DOTS_REGEX.match(popped):
