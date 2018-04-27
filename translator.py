@@ -9,7 +9,7 @@ import html
 from django.db.models import Q
 
 q_template = '&q={}'
-WEB_URL_REGEX = r'((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))'
+WEB_URL_REGEX = r'[ ]?((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))[ ]?'
 NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
@@ -19,6 +19,7 @@ The regex patterns in this gist are intended only to match web URLs -- http,
 https, and naked https://play.google.com/store/apps/details?id=com.facebook.katana domains like "example.com". For a pattern that attempts to
 match all URLs, regardless of protocol, see: https://gist.github.com/gruber/249502
 '''
+
 
 def translate(key, original, target):
     '''
@@ -32,8 +33,31 @@ def translate(key, original, target):
     :return: VALID Translated String Or 404
     '''
     texts = divide_string_with_link(original)
+
+    ctr = 0
+
+    while ctr < len(texts):
+        text, is_text = texts[ctr]
+        if is_text == TRANSLATABLE:
+
+            paragraphs = text.split(".")
+            if not paragraphs[-1]:
+                del paragraphs[-1]
+
+            paragraphs = paragraphs[::-1]
+            sentences = []
+            del texts[ctr]
+            while len(paragraphs):
+                popped = paragraphs.pop()
+                sentences.append((popped, TRANSLATABLE))
+                sentences.append((".", NOT_TRANSLATABLE))
+            texts[ctr:ctr + len(sentences)] = sentences
+            ctr = ctr + len(sentences) - 1
+        ctr += 1
+
     texts = [(key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
+
     for text in texts:
         t = Thread(target=translate_thread, args=text)
         threads.append(t)
@@ -42,7 +66,7 @@ def translate(key, original, target):
         t.join()
 
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
-    return " ".join([t_queue.get() for key, is_text, text, target, t_queue in texts]).replace("  ", " ")
+    return "".join([t_queue.get() for key, is_text, text, target, t_queue in texts])
 
 
 def translate_file(key, original, target, content_type):
@@ -204,7 +228,7 @@ def translate_with_smart_cache(key, original, target):
             smart = SmartText.objects.filter(text=en_result)
             if len(smart) == 0:
                 if from_language == target:
-                    return return_numbers(original,numbers)
+                    return return_numbers(original, numbers)
                 text = LenguaText()
                 text.uuid = uuid.uuid4()
                 text.add_translation(en_result, 'en')
