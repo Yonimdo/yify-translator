@@ -24,6 +24,29 @@ match all URLs, regardless of protocol, see: https://gist.github.com/gruber/2495
 
 
 @auditit()
+def array_devide_dots(log, texts):
+    ctr = 0
+    while ctr < len(texts):
+        text, is_text = texts[ctr]
+        if is_text == TRANSLATABLE:
+
+            paragraphs = text.strip().split(".")
+            paragraphs = paragraphs[::-1]
+            sentences = []
+            del texts[ctr]
+            while len(paragraphs) > 1:
+                popped = paragraphs.pop().strip()
+                sentences.append((popped, TRANSLATABLE))
+                sentences.append((". ", NOT_TRANSLATABLE))
+            popped = paragraphs.pop()
+            sentences.append((popped, TRANSLATABLE))
+            texts[ctr:ctr + len(sentences)] = sentences
+            ctr = ctr + len(sentences) - 1
+        ctr += 1
+    return texts
+
+
+@auditit()
 def translate(log, key, original, target):
     '''
     This function is the API for this translator
@@ -35,29 +58,9 @@ def translate(log, key, original, target):
     :param target: The target language
     :return: VALID Translated String Or 404
     '''
-    texts = divide_string_with_link(log, original)
-
-    ctr = 0
-
-    while ctr < len(texts):
-        text, is_text = texts[ctr]
-        if is_text == TRANSLATABLE:
-
-            paragraphs = text.split(".")
-            if not paragraphs[-1]:
-                del paragraphs[-1]
-
-            paragraphs = paragraphs[::-1]
-            sentences = []
-            del texts[ctr]
-            while len(paragraphs):
-                popped = paragraphs.pop()
-                sentences.append((popped, TRANSLATABLE))
-                sentences.append((".", NOT_TRANSLATABLE))
-            texts[ctr:ctr + len(sentences)] = sentences
-            ctr = ctr + len(sentences) - 1
-        ctr += 1
-
+    original = original.strip()
+    texts = devide_string_with_link(log, original)
+    texts = array_devide_dots(log, texts)
     texts = [(log, key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
 
@@ -96,7 +99,7 @@ def translate_file(log, key, original, target, content_type):
     while ctr < len(file_lines):
         line, is_translatable = file_lines[ctr]
         if is_translatable == TRANSLATABLE:
-            tmp = divide_string_with_link(log, line)
+            tmp = devide_string_with_link(log, line)
             file_lines[ctr:ctr + 1] = tmp
             ctr = ctr + len(tmp)
         ctr = ctr + 1
@@ -146,7 +149,7 @@ def translate_thread(log, key, is_text, text, target, t_queue):
 
 
 @auditit()
-def divide_string_with_link(log, raw_str):
+def devide_string_with_link(log, raw_str):
     strs = []
     links = re.findall(WEB_URL_REGEX, raw_str)[::-1]
     if len(links) == 0:
