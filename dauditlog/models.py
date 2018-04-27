@@ -5,9 +5,18 @@ from django.db import models
 from django.db.models.functions import Now
 
 
+class CheckingList(models.Model):
+    func_name = models.TextField(blank=False, null=False)
+
+    # Todo: fields from the user.
+    def __str__(self):
+        return "{}".format(self.func_name)
+
+
 class Log(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     request = models.TextField(blank=False, null=False)
+    func_name = models.TextField(blank=False, null=False)
     request_body = models.TextField(blank=False, null=False)
     response = models.TextField(null=True, blank=True)
     uuid = models.UUIDField(auto_created=True, default=uid.uuid4)
