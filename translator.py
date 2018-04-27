@@ -13,6 +13,7 @@ from texts.models import LenguaText, OriginalText, SmartText
 q_template = '&q={}'
 WEB_URL_REGEX = r'[ ]?((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))[ ]?'
 NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
+DOTS_REGEX = re.compile(r'([\.。។।။]+)( )?')
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
 MAX_WORD_FOR_REQUEST = 80
@@ -24,22 +25,38 @@ match all URLs, regardless of protocol, see: https://gist.github.com/gruber/2495
 
 
 @auditit()
-def array_devide_dots(log, texts):
+def translate_dot(log, target):
+    if target == 'km':
+        return '។ '
+    elif target == 'ja' or target.startswith('zh'):
+        return '。 '
+    elif target == 'my':
+        return '။ '
+    elif target in ('bn', 'ne', 'hi'):
+        return '। '
+    else:
+        return ". "
+
+
+@auditit()
+def array_divide_dots(log, texts, target):
     ctr = 0
     while ctr < len(texts):
         text, is_text = texts[ctr]
         if is_text == TRANSLATABLE:
 
-            paragraphs = text.strip().split(".")
+            paragraphs = DOTS_REGEX.split(text.strip())
+            while not paragraphs[-1]:
+                del paragraphs[-1]
             paragraphs = paragraphs[::-1]
             sentences = []
             del texts[ctr]
-            while len(paragraphs) > 1:
-                popped = paragraphs.pop().strip()
-                sentences.append((popped, TRANSLATABLE))
-                sentences.append((". ", NOT_TRANSLATABLE))
-            popped = paragraphs.pop()
-            sentences.append((popped, TRANSLATABLE))
+            while len(paragraphs):
+                popped = paragraphs.pop()
+                if DOTS_REGEX.match(popped):
+                    sentences.append((translate_dot(log, target), NOT_TRANSLATABLE))
+                else:
+                    sentences.append((popped, TRANSLATABLE))
             texts[ctr:ctr + len(sentences)] = sentences
             ctr = ctr + len(sentences) - 1
         ctr += 1
@@ -59,8 +76,8 @@ def translate(log, key, original, target):
     :return: VALID Translated String Or 404
     '''
     original = original.strip()
-    texts = devide_string_with_link(log, original)
-    texts = array_devide_dots(log, texts)
+    texts = divide_string_with_link(log, original)
+    texts = array_divide_dots(log, texts,target)
     texts = [(log, key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
 
@@ -99,7 +116,7 @@ def translate_file(log, key, original, target, content_type):
     while ctr < len(file_lines):
         line, is_translatable = file_lines[ctr]
         if is_translatable == TRANSLATABLE:
-            tmp = devide_string_with_link(log, line)
+            tmp = divide_string_with_link(log, line)
             file_lines[ctr:ctr + 1] = tmp
             ctr = ctr + len(tmp)
         ctr = ctr + 1
@@ -149,7 +166,7 @@ def translate_thread(log, key, is_text, text, target, t_queue):
 
 
 @auditit()
-def devide_string_with_link(log, raw_str):
+def divide_string_with_link(log, raw_str):
     strs = []
     links = re.findall(WEB_URL_REGEX, raw_str)[::-1]
     if len(links) == 0:
@@ -216,6 +233,7 @@ def translate_with_smart_cache(log, key, original, target):
     # text = LenguaText.objects.filter(
     #    Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
     # very slow ^^
+    original = original.strip()
     original, numbers = escape_numbers(log, original)
     # check in the db.
     smart = SmartText.objects.filter(text=original)
@@ -274,7 +292,7 @@ def translate_with_smart_cache(log, key, original, target):
 def translate_lines_with_smart_cache(log, key, original, target):
     textholder = {}
     # getting the lengua english texts
-    ltextos = [get_lengua_result(log, key, text, 'en') for text in original]
+    ltextos = [get_lengua_result(log, key, text.strip(), 'en') for text in original]
     unknown = []
     # are there any unknowns?
     for key, text in enumerate(original):
