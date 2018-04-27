@@ -3,12 +3,14 @@ import json
 from django.http import JsonResponse, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_exempt
 
-from texts.models import Suggestion, LenguaText
+from dauditlog.views import logit
+from texts.models import Suggestion
 from translator import translate as lenuga_translate
 
 
+@logit()
 @csrf_exempt
-def translate(request):
+def translate(request, log):
     if request.GET is None:
         return HttpResponseNotFound('<h1>Page not found</h1>')
 
@@ -23,7 +25,7 @@ def translate(request):
     if target is None or target == "":
         return HttpResponseNotFound('<h1>target language is not specified.</h1>')
 
-    translation_value = lenuga_translate(key=key, original=original.strip(), target=target)
+    translation_value = lenuga_translate(log, key=key, original=original.strip(), target=target)
 
     return JsonResponse({
         "data": {
@@ -37,8 +39,9 @@ def translate(request):
     }, json_dumps_params={'ensure_ascii': False}, safe=False)
 
 
+@logit()
 @csrf_exempt
-def suggestion(request):
+def suggestion(request, log):
     if request.GET is None:
         return HttpResponseNotFound('<h1>Page not found</h1>')
 

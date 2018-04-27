@@ -24,7 +24,7 @@ class Log(models.Model):
 # Create your models here.
 class Audit(models.Model):
     # Todo: fields from the user.
-    log = models.ForeignKey(Log, on_delete=models.CASCADE)
+    log = models.ForeignKey(Log, null=True, blank=True, on_delete=models.CASCADE)
     func_name = models.TextField(blank=False, null=False)
     request = models.TextField(blank=False, null=False)
     response = models.TextField()

@@ -4,7 +4,7 @@ from functools import wraps
 from dauditlog.models import Log, Audit
 
 
-def auditit(tag_name):
+def auditit(tag_name=""):
     def tags_decorator(func):
         @wraps(func)
         def func_wrapper(log, *args, **kwargs):
@@ -15,13 +15,14 @@ def auditit(tag_name):
             if log:
                 au.log = log
                 args = (log, *args)
+            au.save()
             try:
                 result = func(*args, **kwargs)
                 au.response = result
                 au.passed = True
             except Exception as e:
                 au.error_message = e
-                result = au
+                result = None
             au.save()
             return result
 
@@ -30,7 +31,7 @@ def auditit(tag_name):
     return tags_decorator
 
 
-def logit(tag_name):
+def logit(tag_name=""):
     def tags_decorator(func):
         @wraps(func)
         def func_wrapper(request, *args, **kwargs):

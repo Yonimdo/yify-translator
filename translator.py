@@ -1,12 +1,14 @@
+import html
+import re
 import uuid
+from queue import Queue
+from threading import Thread
+
 import requests as r
 from django.http import HttpResponseNotFound
+
+from dauditlog.views import auditit
 from texts.models import LenguaText, OriginalText, SmartText
-import re
-from threading import Thread
-from queue import Queue
-import html
-from django.db.models import Q
 
 q_template = '&q={}'
 WEB_URL_REGEX = r'[ ]?((http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?|((content\:\/\/)([\w.,@?^=%&:/~+#-]+)))[ ]?'
@@ -21,7 +23,8 @@ match all URLs, regardless of protocol, see: https://gist.github.com/gruber/2495
 '''
 
 
-def translate(key, original, target):
+@auditit()
+def translate(log, key, original, target):
     '''
     This function is the API for this translator
     It should be able to digest a text with links etc and return an error or VALID text only
@@ -32,7 +35,7 @@ def translate(key, original, target):
     :param target: The target language
     :return: VALID Translated String Or 404
     '''
-    texts = divide_string_with_link(original)
+    texts = divide_string_with_link(log, original)
 
     ctr = 0
 
@@ -55,7 +58,7 @@ def translate(key, original, target):
             ctr = ctr + len(sentences) - 1
         ctr += 1
 
-    texts = [(key, is_text, text, target, Queue()) for text, is_text in texts]
+    texts = [(log, key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
 
     for text in texts:
@@ -66,10 +69,11 @@ def translate(key, original, target):
         t.join()
 
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
-    return "".join([t_queue.get() for key, is_text, text, target, t_queue in texts])
+    return "".join([t_queue.get() for log, key, is_text, text, target, t_queue in texts])
 
 
-def translate_file(key, original, target, content_type):
+@auditit()
+def translate_file(log, key, original, target, content_type):
     '''
     This function is the API for this translator
     It should be able to digest a file with links etc and return an error or VALID text only
@@ -92,7 +96,7 @@ def translate_file(key, original, target, content_type):
     while ctr < len(file_lines):
         line, is_translatable = file_lines[ctr]
         if is_translatable == TRANSLATABLE:
-            tmp = divide_string_with_link(line)
+            tmp = divide_string_with_link(log, line)
             file_lines[ctr:ctr + 1] = tmp
             ctr = ctr + len(tmp)
         ctr = ctr + 1
@@ -100,7 +104,7 @@ def translate_file(key, original, target, content_type):
     for key, line in enumerate(file_lines):
         if line[1] == TRANSLATABLE:
             translatable.append(line[0])
-    translations = translate_lines_with_smart_cache(key, translatable, target)
+    translations = translate_lines_with_smart_cache(log, key, translatable, target)
     translations = translations[::-1]
     file_lines = file_lines[::-1]
     result_file = []
@@ -114,12 +118,13 @@ def translate_file(key, original, target, content_type):
     return " ".join(result_file).replace("  ", " ")
 
 
-def translate_file_to_targets(key, text, target, content_type):
+@auditit()
+def translate_file_to_targets(log, key, text, target, content_type):
     threads = []
     files = {}
     for t in target:
         q = Queue()
-        thread = Thread(target=file_thread, args=(key, text, t, content_type, q))
+        thread = Thread(target=file_thread, args=(log, key, text, t, content_type, q))
         threads.append((t, thread, q))
         thread.start()
     for t, thread, q in threads:
@@ -127,18 +132,21 @@ def translate_file_to_targets(key, text, target, content_type):
     return files
 
 
-def file_thread(key, text, target, content_type, t_queue):
-    t_queue.put(translate_file(key, text, target, content_type))
+@auditit()
+def file_thread(log, key, text, target, content_type, t_queue):
+    t_queue.put(translate_file(log, key, text, target, content_type))
 
 
-def translate_thread(key, is_text, text, target, t_queue):
+@auditit()
+def translate_thread(log, key, is_text, text, target, t_queue):
     if is_text == TRANSLATABLE:
-        t_queue.put(translate_with_smart_cache(key, text, target))
+        t_queue.put(translate_with_smart_cache(log, key, text, target))
     else:
         t_queue.put(text)
 
 
-def divide_string_with_link(raw_str):
+@auditit()
+def divide_string_with_link(log, raw_str):
     strs = []
     links = re.findall(WEB_URL_REGEX, raw_str)[::-1]
     if len(links) == 0:
@@ -156,7 +164,8 @@ def divide_string_with_link(raw_str):
     return strs
 
 
-def divide_string_with_pattern(pattern, raw_str):
+@auditit()
+def divide_string_with_pattern(log, pattern, raw_str):
     strs = []
     matches = re.findall(r"(?P<all>{})".format(pattern), raw_str)[::-1]
     if len(matches) == 0:
@@ -184,7 +193,8 @@ def divide_string_with_pattern(pattern, raw_str):
     return strs
 
 
-def save_original(text, original):
+@auditit()
+def save_original(log, text, original):
     db_original = OriginalText.objects.filter(original=original)
     if len(db_original) != 0:
         db_original = db_original[0]
@@ -197,12 +207,13 @@ def save_original(text, original):
     db_original.save()
 
 
-def translate_with_smart_cache(key, original, target):
+@auditit()
+def translate_with_smart_cache(log, key, original, target):
     # check in the db.
     # text = LenguaText.objects.filter(
     #    Q(values__icontains="¾{}½".format(original)) | Q(values__endswith="¾{}".format(original)))
     # very slow ^^
-    original, numbers = escape_numbers(original)
+    original, numbers = escape_numbers(log, original)
     # check in the db.
     smart = SmartText.objects.filter(text=original)
 
@@ -219,7 +230,7 @@ def translate_with_smart_cache(key, original, target):
         tmp.save()
 
     if len(smart) == 0:
-        gt_result = get_google_result(key, original, 'en')
+        gt_result = get_google_result(log, key, original, 'en')
         try:
             from_language = gt_result['detectedSourceLanguage']
             en_result = html.unescape(gt_result['translatedText'])
@@ -228,12 +239,12 @@ def translate_with_smart_cache(key, original, target):
             smart = SmartText.objects.filter(text=en_result)
             if len(smart) == 0:
                 if from_language == target:
-                    return return_numbers(original, numbers)
+                    return return_numbers(log, original, numbers)
                 text = LenguaText()
                 text.uuid = uuid.uuid4()
                 text.add_translation(en_result, 'en')
                 text.save()
-                save_smart(en_result, text, 'en')
+                save_smart(log, en_result, text, 'en')
             else:
                 text = smart[0].text_origin
         except Exception:
@@ -243,23 +254,24 @@ def translate_with_smart_cache(key, original, target):
 
     translation_value = text.get_text(target)
     if translation_value is None:
-        gt_result = get_google_result(key, text.get_text('en'), target)
+        gt_result = get_google_result(log, key, text.get_text('en'), target)
         try:
             translation_value = html.unescape(gt_result['translatedText'])
             text.add_translation(translation_value, target)
             text.save()
-            save_smart(translation_value, text, target)
+            save_smart(log, translation_value, text, target)
         except Exception as e:
             return gt_result
 
-    Thread(target=save_original, kwargs={"text": text, "original": original}).start()
-    return return_numbers(translation_value, numbers)
+    Thread(target=save_original, kwargs={"log": log, "text": text, "original": original}).start()
+    return return_numbers(log, translation_value, numbers)
 
 
-def translate_lines_with_smart_cache(key, original, target):
+@auditit()
+def translate_lines_with_smart_cache(log, key, original, target):
     textholder = {}
     # getting the lengua english texts
-    ltextos = [get_lengua_result(key, text, 'en') for text in original]
+    ltextos = [get_lengua_result(log, key, text, 'en') for text in original]
     unknown = []
     # are there any unknowns?
     for key, text in enumerate(original):
@@ -268,7 +280,7 @@ def translate_lines_with_smart_cache(key, original, target):
             # unknown get english
 
     if len(unknown) != 0:
-        unknown = get_google_result(key, unknown, 'en')[::-1]
+        unknown = get_google_result(log, key, unknown, 'en')[::-1]
         # unknown english process
         for key, text in enumerate(original):
             if ltextos[key] is None:
@@ -281,11 +293,11 @@ def translate_lines_with_smart_cache(key, original, target):
                 ltexto.add_translation(t, 'en')
                 ltexto.save()
                 textholder[t] = ltexto
-                save_smart(t, ltexto, 'en')
+                save_smart(log, t, ltexto, 'en')
                 ltextos[key] = t, 'en'
 
     # getting the lengua target texts and resetting unknown
-    results = [get_lengua_result(key, text, target) for text, language in ltextos]
+    results = [get_lengua_result(log, key, text, target) for text, language in ltextos]
     unknown = []
     # are there any unknowns?
     for key, text in enumerate(original):
@@ -293,7 +305,7 @@ def translate_lines_with_smart_cache(key, original, target):
             unknown.append(ltextos[key][0])
     if len(unknown) != 0:
         # unknown get target
-        unknown = get_google_result(key, unknown, target)[::-1]
+        unknown = get_google_result(log, key, unknown, target)[::-1]
         # unknown target process
         for key, text in enumerate(original):
             if results[key][1] is not target:
@@ -302,15 +314,16 @@ def translate_lines_with_smart_cache(key, original, target):
                 t = html.unescape(t['translatedText'])
                 results[key] = t, target
                 # Save the english We didnt find it in the get_lengua_result^^
-                ltexto = textholder.get(ltextos[key][0], get_lengua_result(key, ltextos[key][0]))
+                ltexto = textholder.get(ltextos[key][0], get_lengua_result(log, key, ltextos[key][0]))
                 ltexto.add_translation(t, target)
                 ltexto.save()
-                save_smart(t, ltexto, target)
+                save_smart(log, t, ltexto, target)
 
     return [result for result, language in results]
 
 
-def save_smart(key, text, language):
+@auditit()
+def save_smart(log, key, text, language):
     smart = SmartText.objects.filter(text=key)
     if len(smart) != 0:
         smart = smart[0]
@@ -325,8 +338,9 @@ def save_smart(key, text, language):
     smart.save()
 
 
-def get_lengua_result(key, q, target=None):
-    q, numbers = escape_numbers(q)
+@auditit()
+def get_lengua_result(log, key, q, target=None):
+    q, numbers = escape_numbers(log, q)
     # check in the db.
     smart = SmartText.objects.filter(text=q)
 
@@ -352,18 +366,19 @@ def get_lengua_result(key, q, target=None):
 
     translation_value = text.get_text(target)
     if translation_value is None:
-        return return_numbers(text.get_text('en'), numbers), 'en'
+        return return_numbers(log, text.get_text('en'), numbers), 'en'
 
-    return return_numbers(translation_value, numbers), target
+    return return_numbers(log, translation_value, numbers), target
 
 
-def get_google_result(key, q, target):
+@auditit()
+def get_google_result(log, key, q, target):
     arr = False
     if isinstance(q, list):
         if len(q) > MAX_WORD_FOR_REQUEST:
-            return get_google_result(key, q[:MAX_WORD_FOR_REQUEST], target) + get_google_result(key, q[
-                                                                                                     MAX_WORD_FOR_REQUEST:],
-                                                                                                target)
+            return get_google_result(log, key, q[:MAX_WORD_FOR_REQUEST], target) + get_google_result(key, q[
+                                                                                                          MAX_WORD_FOR_REQUEST:],
+                                                                                                     target)
         arr = True
         q = "&q=".join(q)
     gt_result = r.get(
@@ -382,7 +397,8 @@ def get_google_result(key, q, target):
         return HttpResponseNotFound("<h1>Google Translate API mismatch</h1><br><br>{}".format(gt_result.content))
 
 
-def escape_numbers(raw_str):
+@auditit()
+def escape_numbers(log, raw_str):
     strs = []
     numbers = []
     links = re.findall(NUMBERS_REGEX, raw_str)[::-1]
@@ -399,7 +415,8 @@ def escape_numbers(raw_str):
     return "".join(strs), numbers
 
 
-def return_numbers(raw_str, numbers):
+@auditit()
+def return_numbers(log, raw_str, numbers):
     if len(numbers) == 0:
         # There is no links just return the text.
         return raw_str
