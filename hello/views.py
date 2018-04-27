@@ -1,20 +1,25 @@
 from django.shortcuts import render
-from django.http import HttpResponse
 
+from dauditlog.views import logit, auditit
 from .models import Greeting
 
-# Create your views here.
-def index(request):
-    # return HttpResponse('Hello from Python!')
+
+@auditit("")
+def myrender(log, request):
     return render(request, 'index.html')
 
 
-def db(request):
+# Create your views here.
+@logit("")
+def index(request, log):
+    # return HttpResponse('Hello from Python!')
+    return myrender(log, request)
 
+
+def db(request, log):
     greeting = Greeting()
     greeting.save()
 
     greetings = Greeting.objects.all()
 
     return render(request, 'db.html', {'greetings': greetings})
-
