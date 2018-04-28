@@ -4,14 +4,14 @@ from texts.models import LenguaText, OriginalText, Suggestion, SmartText
 
 
 @admin.register(LenguaText)
-class LogManagement(admin.ModelAdmin):
+class LenguaTextManagement(admin.ModelAdmin):
     list_display = ('uuid', 'values')
     list_filter = ('uuid', 'values')
     search_fields = ('uuid', 'values')
 
 
 @admin.register(SmartText)
-class AuditManagement(admin.ModelAdmin):
+class SmartTextManagement(admin.ModelAdmin):
     readonly_fields = ('language', 'count')
     list_display = ('count', 'text', 'language')
     list_filter = ('count', 'text', 'language')
@@ -19,7 +19,7 @@ class AuditManagement(admin.ModelAdmin):
 
 
 @admin.register(OriginalText)
-class AuditManagement(admin.ModelAdmin):
+class OriginalTextManagement(admin.ModelAdmin):
     readonly_fields = ('original', 'count')
     list_display = ('count', 'original')
     list_filter = ('count', 'original')
@@ -27,7 +27,7 @@ class AuditManagement(admin.ModelAdmin):
 
 
 @admin.register(Suggestion)
-class AuditManagement(admin.ModelAdmin):
+class SuggestionManagement(admin.ModelAdmin):
     readonly_fields = ('original','translation', 'count')
     list_display = ('original', 'translation', 'user_translation', 'from_language', 'to_language', 'count')
     list_filter = ('original', 'translation', 'user_translation', 'from_language', 'to_language', 'count')
