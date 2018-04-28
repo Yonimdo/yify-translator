@@ -154,7 +154,7 @@ def translate(log, key, original, target):
     results = excape_space_marks(log, [(t_queue.get(), is_text) for log, key, is_text, text, target, t_queue in texts])
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
 
-    return "".join([res for res, is_text in results]).strip().replace('⑳❾',';')
+    return "".join([res for res, is_text in results]).strip()
 
 
 # @auditit()
