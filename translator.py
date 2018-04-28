@@ -139,7 +139,6 @@ def translate(log, key, original, target):
     :return: VALID Translated String Or 404
     '''
     original = original.strip()
-    original.replace(';','⑳❾')
     texts = divide_string_with_link(log, original)
     texts = array_divide_marks(log, texts)
     texts = array_divide_dots(log, texts, target)
