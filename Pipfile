@@ -12,6 +12,7 @@ gunicorn = "*"
 django-heroku = "*"
 whitenoise = "*"
 html2text = "*"
+psycopg2-binary = "*"
 
 [requires]
 
