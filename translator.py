@@ -137,8 +137,8 @@ def translate(log, key, original, target):
     original = original.strip()
     original.replace(';','⑳❾')
     texts = divide_string_with_link(log, original)
-    texts = array_divide_dots(log, texts, target)
     texts = array_divide_marks(log, texts)
+    texts = array_divide_dots(log, texts, target)
     texts = [(log, key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
     for text in texts:
