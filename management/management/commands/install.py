@@ -3,6 +3,8 @@ from django.core.management.base import BaseCommand
 
 
 # ½ ¾
+from lenguatranslator import settings
+
 
 class Command(BaseCommand):
     help = "Install Super user"
@@ -11,6 +13,6 @@ class Command(BaseCommand):
         user = User.objects.create_superuser(
         username="admin",
         email='syrmapp@gmail.com',
-        password='wsedrfygyihuji')
+        password=settings.PASSWORD)
         user.full_clean()
         user.save()

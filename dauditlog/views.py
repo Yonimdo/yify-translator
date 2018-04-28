@@ -17,6 +17,7 @@ def auditit(tag_name=""):
             au.note = tag_name
             if log:
                 au.log = log
+                au.log_uuid = log.uuid
                 args = (log, *args)
             else:
                 args = (None, *args)

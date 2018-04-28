@@ -14,3 +14,4 @@ DATABASES = {
 DEBUG = True
 ALLOWED_HOSTS = []
 
+PASSWORD = 'admin'

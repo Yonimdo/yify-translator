@@ -11,7 +11,7 @@ requests = "*"
 gunicorn = "*"
 django-heroku = "*"
 whitenoise = "*"
-
+html2text = "*"
 
 [requires]
 

@@ -83,8 +83,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-FILE_UPLOAD_HANDLERS =["django.core.files.uploadhandler.MemoryFileUploadHandler",
- "django.core.files.uploadhandler.TemporaryFileUploadHandler"]
+FILE_UPLOAD_HANDLERS = ["django.core.files.uploadhandler.MemoryFileUploadHandler",
+                        "django.core.files.uploadhandler.TemporaryFileUploadHandler"]
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
@@ -107,6 +107,7 @@ STATIC_URL = '/static/'
 LOGOUT_REDIRECT_URL = '/profile/login/'
 LOGIN_REDIRECT_URL = '/'
 
+PASSWORD = 'wsedrfygyihuji'
 from .production_settings import *
 
 try:
@@ -115,4 +116,5 @@ except Exception as e:
     print("Running Production")
 
 import django_heroku
+
 django_heroku.settings(locals())
