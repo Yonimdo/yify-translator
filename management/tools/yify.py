@@ -10,7 +10,7 @@ from shutil import copyfile, rmtree
 import requests
 from html2text import HTML2Text
 
-BASE_DIR = 'tools/tmps'
+BASE_DIR = 'management/tools/tmps'
 BASE_URL = 'http://www.yifysubtitles.com'
 SUB_RE = r'(\d+)\| (\w+)\|[^/]+([^)]+)\)'
 
@@ -37,6 +37,7 @@ def normalize_filename(title):
     title.replace('*', ' ').replace('?', ' ')
     title.replace('"', ' ').replace(':', ' ')
     return title
+
 
 def search_subtitles(query, limit):
     '''Search subtitle by query in parameter.'''
@@ -137,6 +138,18 @@ def get_subtitle_thread(link, destination, t_queue):
     t_queue.put(get_subtitle(link['link'], destination, link['language']))
 
 
+def copy_folder_files(root, to):
+    directory_files = os.listdir(root)
+    for name in directory_files:
+        path = "{}/{}".format(root, name)
+        # If the extension of the file matches some text followed by ext...
+        if os.path.isfile(path):
+            if root != to:
+                copyfile(path, "{}/{}".format(to, name))
+        else:
+            copy_folder_files(path, to)
+
+
 def get_subtitle(url, destination, target):
     '''Download the specific subtitle.'''
     text = get('{}{}'.format(BASE_URL, url))
@@ -170,14 +183,16 @@ def get_subtitle(url, destination, target):
         try:
             with ZipFile('{}/{}'.format(folder, filename)) as zf:
                 files = zf.filelist
-                files = [file for file in files if file.filename.split('.')[-1] in ('srt', 'sub')]
                 zf.extractall(folder)
+                files = [file for file in files if file.filename.split('.')[-1] in ('srt', 'sub')]
         except BadZipFile as z:
             return []
         data = []
         if files:
             zf_filename = '{}/{}'.format(folder, files[0].filename)
-            copyfile(zf_filename, zf_filename.replace("{}/".format(uid), "{}-".format(target)))
+            zf_target = "{}/{}".format(folder.replace('/{}'.format(uid), ''),
+                                       normalize_filename("{}-{}".format(target, zf_filename.split('/')[-1])))
+            copyfile(zf_filename, zf_target)
             # try:
             #     with open(zf_filename, 'r', encoding='cp1251') as f:
             #         data = f.read()
@@ -187,5 +202,5 @@ def get_subtitle(url, destination, target):
             #             data = f.read()
             #     except UnicodeDecodeError as e:
             #         pass
-        rmtree(folder, ignore_errors=True)
+            rmtree(folder, ignore_errors=True)
         return data

@@ -4,4 +4,4 @@ staticfiles
 .env
 db.sqlite3
 .idea
-tools/tmps/*
+*/tools/tmps/*
