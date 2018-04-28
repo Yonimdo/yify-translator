@@ -6,7 +6,6 @@ from texts.models import LenguaText, OriginalText, Suggestion, SmartText
 @admin.register(LenguaText)
 class LenguaTextManagement(admin.ModelAdmin):
     list_display = ('uuid', 'values')
-    list_filter = ('uuid', 'values')
     search_fields = ('uuid', 'values')
 
 
@@ -14,7 +13,6 @@ class LenguaTextManagement(admin.ModelAdmin):
 class SmartTextManagement(admin.ModelAdmin):
     readonly_fields = ('language', 'count')
     list_display = ('count', 'text', 'language')
-    list_filter = ('count', 'text', 'language')
     search_fields = ('count', 'text', 'language')
 
 
@@ -22,7 +20,6 @@ class SmartTextManagement(admin.ModelAdmin):
 class OriginalTextManagement(admin.ModelAdmin):
     readonly_fields = ('original', 'count')
     list_display = ('count', 'original')
-    list_filter = ('count', 'original')
     search_fields = ('count', 'original')
 
 

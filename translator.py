@@ -7,14 +7,13 @@ from threading import Thread
 import requests as r
 from django.http import HttpResponseNotFound
 
-from dauditlog.views import auditit
 from texts.models import LenguaText, OriginalText, SmartText
 
 q_template = '&q={}'
 WEB_URL_REGEX = r'(([ ,\.。។।။]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ,\.。។।။]+)?|(([ ,\.。។।။]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ,\.。។।။]+)?))'
 NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
 DOTS_REGEX = re.compile(r'(\<br\>|[\.。។।။]+ ?)')
-MARKS_REGEX = re.compile(r'( ?[?!]+ ?)')
+MARKS_REGEX = re.compile(r'( ?[?？؟՞፧!]+ ?)')
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
 MAX_WORD_FOR_REQUEST = 80
@@ -25,7 +24,7 @@ match all URLs, regardless of protocol, see: https://gist.github.com/gruber/2495
 '''
 
 
-@auditit()
+# @auditit()
 def translate_dot(log, dots, target):
     if dots == "<br>":
         return "<br>"
@@ -41,7 +40,7 @@ def translate_dot(log, dots, target):
         return re.sub(DOTS_REGEX, dots, ".") + " "
 
 
-@auditit()
+# @auditit()
 def array_divide_dots(log, mtexts, target):
     texts = mtexts
     ctr = 0
@@ -72,7 +71,7 @@ def array_divide_dots(log, mtexts, target):
     return texts
 
 
-@auditit()
+# @auditit()
 def array_divide_marks(log, mtexts):
     texts = mtexts
     ctr = 0
@@ -109,20 +108,25 @@ def array_divide_marks(log, mtexts):
     return texts
 
 
-@auditit()
+# @auditit()
 def excape_space_marks(log, mtexts):
     texts = mtexts
     ctr = 0
     while texts and ctr < len(texts):
         text, is_text = texts[ctr]
         if is_text == TRANSLATABLE and (text.endswith("?")
-                                        or text.endswith("!")):
+                                        or text.endswith("!")
+                                        or text.endswith("؟")
+                                        or text.endswith("？")
+                                        or text.endswith("፧")
+                                        or text.endswith("՞")
+                                        ):
             texts[ctr] = (text + " ", TRANSLATABLE)
         ctr += 1
     return texts
 
 
-@auditit()
+# @auditit()
 def translate(log, key, original, target):
     '''
     This function is the API for this translator
@@ -154,7 +158,7 @@ def translate(log, key, original, target):
     return "".join([res for res, is_text in results]).strip().replace('⑳❾',';')
 
 
-@auditit()
+# @auditit()
 def translate_file(log, key, original, target, content_type):
     '''
     This function is the API for this translator
@@ -200,7 +204,7 @@ def translate_file(log, key, original, target, content_type):
     return " ".join(result_file).replace("  ", " ")
 
 
-@auditit()
+# @auditit()
 def translate_file_to_targets(log, key, text, target, content_type):
     threads = []
     files = {}
@@ -214,12 +218,12 @@ def translate_file_to_targets(log, key, text, target, content_type):
     return files
 
 
-@auditit()
+# @auditit()
 def file_thread(log, key, text, target, content_type, t_queue):
     t_queue.put(translate_file(log, key, text, target, content_type))
 
 
-@auditit()
+# @auditit()
 def translate_thread(log, key, is_text, text, target, t_queue):
     if is_text == TRANSLATABLE:
         t_queue.put(translate_with_smart_cache(log, key, text, target))
@@ -227,7 +231,7 @@ def translate_thread(log, key, is_text, text, target, t_queue):
         t_queue.put(text)
 
 
-@auditit()
+# @auditit()
 def divide_string_with_link(log, raw_str):
     strs = []
     links = re.findall(WEB_URL_REGEX, raw_str)[::-1]
@@ -246,7 +250,7 @@ def divide_string_with_link(log, raw_str):
     return strs
 
 
-@auditit()
+# @auditit()
 def divide_string_with_pattern(log, pattern, raw_str):
     strs = []
     matches = re.findall(r"(?P<all>{})".format(pattern), raw_str)[::-1]
@@ -275,7 +279,7 @@ def divide_string_with_pattern(log, pattern, raw_str):
     return strs
 
 
-@auditit()
+# @auditit()
 def save_original(log, text, original):
     db_original = OriginalText.objects.filter(original=original)
     if len(db_original) != 0:
@@ -289,7 +293,7 @@ def save_original(log, text, original):
     db_original.save()
 
 
-@auditit()
+# @auditit()
 def translate_with_smart_cache(log, key, original, target):
     # check in the db.
     # text = LenguaText.objects.filter(
@@ -350,7 +354,7 @@ def translate_with_smart_cache(log, key, original, target):
     return return_numbers(log, translation_value, numbers)
 
 
-@auditit()
+# @auditit()
 def translate_lines_with_smart_cache(log, key, original, target):
     textholder = {}
     # getting the lengua english texts
@@ -405,7 +409,7 @@ def translate_lines_with_smart_cache(log, key, original, target):
     return [result for result, language in results]
 
 
-@auditit()
+# @auditit()
 def save_smart(log, key, text, language):
     smart = SmartText.objects.filter(text=key)
     if len(smart) != 0:
@@ -421,7 +425,7 @@ def save_smart(log, key, text, language):
     smart.save()
 
 
-@auditit()
+# @auditit()
 def get_lengua_result(log, key, q, target=None):
     q, numbers = escape_numbers(log, q)
     # check in the db.
@@ -454,7 +458,7 @@ def get_lengua_result(log, key, q, target=None):
     return return_numbers(log, translation_value, numbers), target
 
 
-@auditit()
+# @auditit()
 def get_google_result(log, key, q, target):
     arr = False
     if isinstance(q, list):
@@ -480,7 +484,7 @@ def get_google_result(log, key, q, target):
         return HttpResponseNotFound("<h1>Google Translate API mismatch</h1><br><br>{}".format(gt_result.content))
 
 
-@auditit()
+# @auditit()
 def escape_numbers(log, raw_str):
     strs = []
     numbers = []
@@ -498,7 +502,7 @@ def escape_numbers(log, raw_str):
     return "".join(strs), numbers
 
 
-@auditit()
+# @auditit()
 def return_numbers(log, raw_str, numbers):
     if len(numbers) == 0:
         # There is no links just return the text.

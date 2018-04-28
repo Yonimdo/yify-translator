@@ -1,5 +1,5 @@
 import re
-from translator import NUMBERS_REGEX
+import translator as trns
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
@@ -9,15 +9,17 @@ from texts.models import LenguaText, OriginalText, SmartText
 
 
 class Command(BaseCommand):
-    help = "Change the db"
+    help = "Normalize the db"
 
     def handle(self, *args, **options):
-        for sm in SmartText.objects.all():
-            sm.delete()
-
         texts = LenguaText.objects.all()
         for text_origin in texts:
             try:
+                en = text_origin.get_text()
+
+
+
+
                 languages = text_origin.get_list()
                 for key in languages:
                     text = languages[key]
@@ -26,5 +28,6 @@ class Command(BaseCommand):
                     s_text.language = key
                     s_text.text = text
                     s_text.save()
+
             except Exception as e:
                 text_origin.delete()
