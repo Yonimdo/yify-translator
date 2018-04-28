@@ -77,7 +77,7 @@
             ],
             "version": "==2.6"
         },
-        "psycopg2": {
+        "psycopg2-binary": {
             "hashes": [
                 "sha256:aeaba399254ca79c299d9fe6aa811d3c3eac61458dee10270de7f4e71c624998",
                 "sha256:1d90379d01d0dc50ae9b40c863933d87ff82d51dd7d52cea5d1cb7019afd72cd",
