@@ -31,11 +31,11 @@ def get(url):
 
 
 def normalize_filename(title):
-    title.replace('\\', ' ').replace('/', ' ')
-    title.replace(',', ' ').replace('.', ' ')
-    title.replace('<', ' ').replace('>', ' ')
-    title.replace('*', ' ').replace('?', ' ')
-    title.replace('"', ' ').replace(':', ' ')
+    title = title.replace('\\', ' ').replace('/', ' ')
+    title = title.replace(',', ' ').replace('.', ' ')
+    title = title.replace('<', ' ').replace('>', ' ')
+    title = title.replace('*', ' ').replace('?', ' ')
+    title = title.replace('"', ' ').replace(':', ' ')
     return title
 
 

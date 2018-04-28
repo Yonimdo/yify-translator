@@ -27,7 +27,7 @@ class Command(BaseCommand):
             '--limit',
             action='store',
             dest='limit',
-            default=2,
+            default=5,
             help='Limit the result or DDOS attack your call.',
         )
 

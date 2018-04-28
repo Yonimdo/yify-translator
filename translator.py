@@ -11,7 +11,7 @@ from dauditlog.views import auditit
 from texts.models import LenguaText, OriginalText, SmartText
 
 q_template = '&q={}'
-WEB_URL_REGEX = r'(([ ]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ]+)?|(([ ]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ]+)?))'
+WEB_URL_REGEX = r'(([ ,\.。។।။]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ,\.。។।။]+)?|(([ ,\.。។।။]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ,\.。។।။]+)?))'
 NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
 DOTS_REGEX = re.compile(r'([\.。។।။]+)( )?')
 TRANSLATABLE = 'text'
@@ -25,23 +25,24 @@ match all URLs, regardless of protocol, see: https://gist.github.com/gruber/2495
 
 
 @auditit()
-def translate_dot(log, target):
+def translate_dot(log, dots, target):
     if target == 'km':
-        return '។ '
+        return re.sub(DOTS_REGEX, dots, '។')
     elif target == 'ja' or target.startswith('zh'):
-        return '。 '
+        return re.sub(DOTS_REGEX, dots, '。')
     elif target == 'my':
-        return '။ '
+        return re.sub(DOTS_REGEX, dots, '။')
     elif target in ('bn', 'ne', 'hi'):
-        return '। '
+        return re.sub(DOTS_REGEX, dots, '।')
     else:
-        return ". "
+        return re.sub(DOTS_REGEX, dots, ".")
 
 
 @auditit()
-def array_divide_dots(log, texts, target):
+def array_divide_dots(log, mtexts, target):
+    texts = mtexts
     ctr = 0
-    while ctr < len(texts):
+    while texts and ctr < len(texts):
         text, is_text = texts[ctr]
         if is_text == TRANSLATABLE:
             paragraphs = DOTS_REGEX.split(text.strip())
@@ -54,12 +55,16 @@ def array_divide_dots(log, texts, target):
             sentences = []
             while len(paragraphs):
                 popped = paragraphs.pop()
+                if not popped:
+                    continue
                 if DOTS_REGEX.match(popped):
-                    sentences.append((translate_dot(log, target), NOT_TRANSLATABLE))
+                    sentences.append((translate_dot(log, popped, target), NOT_TRANSLATABLE))
                 else:
                     sentences.append((popped, TRANSLATABLE))
-            texts[ctr:ctr + len(sentences)] = sentences
-            ctr = ctr + len(sentences) - 1
+            sentences = sentences[::-1]
+            while len(sentences):
+                texts.insert(ctr, sentences.pop())
+                ctr += 1
         ctr += 1
     return texts
 
@@ -78,7 +83,7 @@ def translate(log, key, original, target):
     '''
     original = original.strip()
     texts = divide_string_with_link(log, original)
-    texts = array_divide_dots(log, texts,target)
+    texts = array_divide_dots(log, texts, target)
     texts = [(log, key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
 
