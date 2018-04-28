@@ -13,7 +13,8 @@ from texts.models import LenguaText, OriginalText, SmartText
 q_template = '&q={}'
 WEB_URL_REGEX = r'(([ ,\.。។।။]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ,\.。។।။]+)?|(([ ,\.。។।။]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ,\.。។।။]+)?))'
 NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
-DOTS_REGEX = re.compile(r'([\.。។।။]+)( )?')
+DOTS_REGEX = re.compile(r'(\<br\>|[\.。។।။]+ ?)')
+MARKS_REGEX = re.compile(r'( ?[?!]+ ?)')
 TRANSLATABLE = 'text'
 NOT_TRANSLATABLE = 'not_text'
 MAX_WORD_FOR_REQUEST = 80
@@ -26,16 +27,18 @@ match all URLs, regardless of protocol, see: https://gist.github.com/gruber/2495
 
 @auditit()
 def translate_dot(log, dots, target):
+    if dots == "<br>":
+        return "<br>"
     if target == 'km':
-        return re.sub(DOTS_REGEX, dots, '។')
+        return re.sub(DOTS_REGEX, dots, '។') + " "
     elif target == 'ja' or target.startswith('zh'):
-        return re.sub(DOTS_REGEX, dots, '。')
+        return re.sub(DOTS_REGEX, dots, '。') + " "
     elif target == 'my':
-        return re.sub(DOTS_REGEX, dots, '။')
+        return re.sub(DOTS_REGEX, dots, '။') + " "
     elif target in ('bn', 'ne', 'hi'):
-        return re.sub(DOTS_REGEX, dots, '।')
+        return re.sub(DOTS_REGEX, dots, '।') + " "
     else:
-        return re.sub(DOTS_REGEX, dots, ".")
+        return re.sub(DOTS_REGEX, dots, ".") + " "
 
 
 @auditit()
@@ -70,6 +73,56 @@ def array_divide_dots(log, mtexts, target):
 
 
 @auditit()
+def array_divide_marks(log, mtexts):
+    texts = mtexts
+    ctr = 0
+    while texts and ctr < len(texts):
+        text, is_text = texts[ctr]
+        if is_text == TRANSLATABLE:
+            paragraphs = MARKS_REGEX.split(text.strip())
+            while paragraphs and not paragraphs[-1]:
+                del paragraphs[-1]
+            del texts[ctr]
+            if not paragraphs:
+                continue
+            paragraphs = paragraphs[::-1]
+            sentences = []
+            while len(paragraphs):
+                popped = paragraphs.pop()
+                if not popped:
+                    continue
+                if MARKS_REGEX.match(popped):
+                    if sentences:
+                        text, i = sentences[-1]
+                        sentences[-1] = ("{}{}".format(text, popped), i)
+                    else:
+                        text, is_text = (popped, is_text)
+                        sentences.insert(0, (text, is_text))
+
+                else:
+                    sentences.append((popped, TRANSLATABLE))
+            sentences = sentences[::-1]
+            while len(sentences):
+                texts.insert(ctr, sentences.pop())
+                ctr += 1
+        ctr += 1
+    return texts
+
+
+@auditit()
+def excape_space_marks(log, mtexts):
+    texts = mtexts
+    ctr = 0
+    while texts and ctr < len(texts):
+        text, is_text = texts[ctr]
+        if is_text == TRANSLATABLE and (text.endswith("?")
+                                        or text.endswith("!")):
+            texts[ctr] = (text + " ", TRANSLATABLE)
+        ctr += 1
+    return texts
+
+
+@auditit()
 def translate(log, key, original, target):
     '''
     This function is the API for this translator
@@ -82,11 +135,12 @@ def translate(log, key, original, target):
     :return: VALID Translated String Or 404
     '''
     original = original.strip()
+    original.replace(';','⑳❾')
     texts = divide_string_with_link(log, original)
     texts = array_divide_dots(log, texts, target)
+    texts = array_divide_marks(log, texts)
     texts = [(log, key, is_text, text, target, Queue()) for text, is_text in texts]
     threads = []
-
     for text in texts:
         t = Thread(target=translate_thread, args=text)
         threads.append(t)
@@ -94,8 +148,10 @@ def translate(log, key, original, target):
     for t in threads:
         t.join()
 
+    results = excape_space_marks(log, [(t_queue.get(), is_text) for log, key, is_text, text, target, t_queue in texts])
     # Todo: This function should return 404 if the one of the t_queue.get() is 404
-    return "".join([t_queue.get() for log, key, is_text, text, target, t_queue in texts])
+
+    return "".join([res for res, is_text in results]).strip().replace('⑳❾',';')
 
 
 @auditit()
