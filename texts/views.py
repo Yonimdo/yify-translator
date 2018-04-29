@@ -11,6 +11,10 @@ from translator import translate as lenuga_translate
 
 
 def fix_plus_url(original):
+    original.strip()
+    while original.endswith("+"):
+        original = original[0:-1]
+        original.strip()
     ms = re.findall(r'([\w]([\+]{3})[\w])', original)[::-1]
     while len(ms):
         m = ms.pop()
@@ -38,10 +42,6 @@ def fix_plus_url(original):
         str = m[0].replace("+", " + ")
         original = original.replace(m[0], str)
 
-    original.strip()
-    while original.endswith("+"):
-        original = original[0:-1]
-        original.strip()
     return original
 
 
