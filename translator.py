@@ -494,7 +494,7 @@ def escape_numbers(log, raw_str):
     while len(links) > 0:
         number = links.pop()[0]
         before_link = raw_str.split(number)[0]
-        raw_str = raw_str.replace(before_link + number, "")
+        raw_str = raw_str.replace(before_link + number, "", 1)
         strs.append(before_link + '18')
         numbers.append(number)
     strs.append(raw_str)
@@ -512,7 +512,7 @@ def return_numbers(log, raw_str, numbers):
     while len(links) > 0:
         fake = links.pop()
         before_link = raw_str.split(fake)[0]
-        raw_str = raw_str.replace(before_link + fake, "")
+        raw_str = raw_str.replace(before_link + fake, "", 1)
         strs.append(before_link + numbers.pop())
     strs.append(raw_str)
     return "".join(strs)
