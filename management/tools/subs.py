@@ -38,9 +38,13 @@ class OrderBy:
 BASE_DIR = 'management/tools/tmps'
 
 
-def get_folder_data(search, sort):
+def get_options():
+    return os.listdir(BASE_DIR)
+
+
+def get_folder_data(dir, sort):
     result = {}
-    folder = "{}/{}".format(BASE_DIR, search)
+    folder = "{}/{}".format(BASE_DIR, dir)
     if not os.path.isdir(folder):
         print("Movie is downloaded yet? or just spelling (Enter to folder name)")
         return None
@@ -80,7 +84,7 @@ def get_folder_data(search, sort):
                 continue
         except UnicodeDecodeError as e:
             print("language {} UnicodeDecodeError on ISO-8859-1 {}".format(language_code, e))
-    return sync_keys_to_languages(result)
+    return sync_keys_to_languages(result, orderby=sort)
 
 
 def format_subtitle(raw_str, orderby=OrderBy.frmto, lines_pattern='\n\n',

@@ -19,6 +19,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '--import',
+            action='store',
+            dest='import',
+            help='Create a json from dir',
+        )
+        parser.add_argument(
             '--dir',
             action='store',
             dest='dir',
@@ -33,7 +39,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+
         dir = options.get('dir')
+        if dir is None:
+            print("Options:\n")
+            print("\n".join(subs.get_options()))
+            print("\n")
+            return
         order = options.get('order')
         results = subs.get_folder_data(dir, OrderBy.getsort(order))
         pass

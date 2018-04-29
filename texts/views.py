@@ -15,7 +15,10 @@ def fix_plus_url(original):
     while original.endswith("+"):
         original = original[0:-1]
         original.strip()
-    
+    while original.startswith("+"):
+        original = original[1:]
+        original.strip()
+
     ms = re.findall(r'([\+]{4,})', original)[::-1]
     while len(ms):
         m = ms.pop()[0]
