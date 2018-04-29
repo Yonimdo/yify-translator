@@ -1,8 +1,21 @@
 import html
+import json
 import os
 import re
-
+import chardet
 from  lenguatranslator.settings import dict_languages
+from management.tools import SubDoc
+
+
+def sublog(text, doc=None):
+    if doc:
+        doc.log(text)
+    print(text)
+
+
+def makedir(folder):
+    if not os.path.exists(os.path.dirname(folder)):
+        os.makedirs(os.path.dirname(folder))
 
 
 class OrderBy:
@@ -47,55 +60,45 @@ def get_options():
     return os.listdir(BASE_DIR)
 
 
-def get_folder_data(dir, sort):
+def get_folder_data(dir, sort, doc=None):
     result = {}
     folder = "{}/{}".format(BASE_DIR, dir)
     if not os.path.isdir(folder):
-        print("Movie is downloaded yet? or just spelling (Enter to folder name)")
+        sublog("Movie is downloaded yet? or just spelling (Enter to folder name)", doc)
         return None
     directory_files = os.listdir(folder)
+    sublog("Possible {} .sub files".format(len(directory_files)), doc)
     for name in directory_files:
         path = "{}/{}".format(folder, name)
         language_code = dict_languages.get(name.split("-")[0].lower(), None)
         # If the extension of the file matches some text followed by ext...
         if not os.path.isfile(path):
-            print("Movie {} still has folders in it we are missing some data!")
-            print("Please fix manually...")
+            sublog("Movie {} still has folders in it we are missing some data!", doc)
+            sublog("Please fix manually...", doc)
             continue
+        sublog("{}:{}".format(name.split("-")[0], language_code), doc)
         if not language_code:
-            print("An Unknown language {} continuing...".format(name.split("-")[0]))
+            sublog("An Unknown language {} continuing...".format(name.split("-")[0]), doc)
             continue
         else:
             language_code = language_code['code']
         try:
-            with open(path, 'r', encoding='utf8') as f:
-                result[language_code] = format_subtitle(f.read())
+            with open(path, 'rb') as f:
+                b = f.read()
+                type = chardet.detect(b)
+                a = str(b.decode(type['encoding']).encode('utf8'), 'utf8')
+                sublog("Report on {}:{}".format(language_code,type), doc)
+                result[language_code] = format_subtitle(a)
                 continue
-        except UnicodeDecodeError as e:
-            print("language {} UnicodeDecodeError on utf8 {}".format(language_code, e))
-        try:
-            print("tring Unicode cp1251")
-            with open(path, 'r', encoding='cp1251') as f:
-                result[language_code] = format_subtitle(f.read())
-                print("Unicode cp1251 was ok!")
-                continue
-        except UnicodeDecodeError as e:
-            print("language {} UnicodeDecodeError on cp1251 {}".format(language_code, e))
-        try:
-            print("tring Unicode ISO-8859-1")
-            with open(path, 'r', encoding='ISO-8859-1') as f:
-                result[language_code] = format_subtitle(f.read())
-                print("Unicode ISO-8859-1 was ok!")
-                continue
-        except UnicodeDecodeError as e:
-            print("language {} UnicodeDecodeError on ISO-8859-1 {}".format(language_code, e))
-    return sync_keys_to_languages(result, orderby=sort)
+        except Exception as e:
+            sublog("language {} Exception {}".format(language_code, e), doc)
+    return sync_keys_to_languages(result, orderby=sort, doc=doc)
 
 
 def format_subtitle(raw_str, orderby=OrderBy.frmto, lines_pattern='\n\n',
-                    single_pattern=r'(?P<full>(?P<pk>\d+)\n(?P<from>[\d:,]+)[ --> ]+(?P<to>[\d:,]+))'):
+                    single_pattern=r'(?P<full>(?P<pk>\d+)\n(?P<from>[\d:,]+)[ --> ]+(?P<to>[\d:,]+))', doc=None):
     result = {}
-    lines = raw_str.split("\n\n")
+    lines = raw_str.replace('\r','').split("\n\n")
     for line in lines:
         m = re.match(single_pattern, line)
         if m:
@@ -107,19 +110,18 @@ def format_subtitle(raw_str, orderby=OrderBy.frmto, lines_pattern='\n\n',
     return result
 
 
-def sync_keys_to_languages(subtitle_dict, orderby=OrderBy.frmto):
-    print("\n\n")
-    print("-" * 20, end="")
-    print("Syncing")
-    print("-" * 20, end="")
-    print("...")
+def sync_keys_to_languages(subtitle_dict, orderby=OrderBy.frmto, doc=None):
+    sublog("\n\n", doc)
+    sublog("Syncing")
     en = subtitle_dict.get('en', None)
     if not en:
-        print("No english jsons to work with")
-
+        sublog("No english jsons to work with", doc)
+        return
     del subtitle_dict['en']
     strength = {}
     result = {}
+
+    sublog("There are {} Possible languages and {} lines".format(len(subtitle_dict), len(en)), doc)
     for key in en:
         item = {'en': en[key]}
         for lang in subtitle_dict:
@@ -130,24 +132,33 @@ def sync_keys_to_languages(subtitle_dict, orderby=OrderBy.frmto):
         result[key] = item
 
     # We got the json we wanted!
-    # I just want to print the strength of the SortBy
+    # I just want to sublog the strength of the SortBy
     # they vary in result so try different options
     # (pk, only from, only to, from & to, all)
     total = len(en)
 
-    print("Strength of the SortBy: {}".format(orderby.__name__))
+    sublog("Strength of the SortBy: {}".format(orderby.__name__), doc)
     for lang in strength:
         percent = strength[lang] / total * 100
         percent = int(percent / 10)  # Score of 0 - 10
         score = "|{}﴾﴿{}|".format("-" * (percent - 1), "-" * (10 - percent))
-        print("{:}:{:>15}".format(lang, score))
+        sublog("{:} {:<10}{:>15} match:{}".format(lang, "{} lines".format(len(subtitle_dict[lang])), score,
+                                                  strength[lang]), doc)
 
-    print("Change SortBy: --sort [fromto(DEFAULT), pk,from,to, all]")
+    sublog("Change SortBy: --sort [fromto(DEFAULT), pk,from,to, all]")
     return result
 
 
 def create_json_from_folder(dir, sort):
-    get_folder_data(dir, sort)
+    doc = SubDoc()
+    folder = "{}/{}/{}/".format(BASE_JSON_DIR, dir, sort.__name__)
+    data = get_folder_data(dir, sort, doc)
+    makedir(folder)
+    with open("{}data.json".format(folder), 'w', encoding='utf8') as f:
+        f.write(json.dumps(data))
+    with open("{}doc.txt".format(folder), 'w', encoding='utf8') as f:
+        f.write(doc.get())
+    return
 
 
 def insert_lengua_text(dict):

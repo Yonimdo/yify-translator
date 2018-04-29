@@ -6,3 +6,4 @@ db.sqlite3
 .idea
 local_settings.py
 */tools/tmps/*
+*/tools/jsons/

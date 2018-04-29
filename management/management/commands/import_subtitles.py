@@ -48,15 +48,15 @@ class Command(BaseCommand):
         if dir is None and imp is None:
             print(self.help)
             print("Options:\n")
-            print("\t--dir\n\t\t",end="")
+            print("\t--dir\n\t\t", end="")
             print("\n\t\t".join(subs.get_options()))
-            print("\t--import\n\t\t",end="")
+            print("\t--import\n\t\t", end="")
             print("\n\t\t".join(subs.get_import_options()))
             return
 
-        if imp:
-            subs.insert_lengua_text(subs.get_json(imp))
-
         order = options.get('order')
-        results = subs.get_folder_data(dir, OrderBy.getsort(order))
+        if imp:
+            subs.insert_lengua_text(subs.get_json(imp, order))
+
+        subs.create_json_from_folder(dir, OrderBy.getsort(order))
         pass
