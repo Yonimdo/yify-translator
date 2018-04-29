@@ -51,17 +51,14 @@ def translate(request, log):
 
     key = request.GET.get('key', None)
     target = request.GET.get('target', None)
-    original = request.GET.get('q', None)
-    # query = re.findall(r'&q=[^⑳❾]+', request.build_absolute_uri())
-    # if not query:
-    #     return HttpResponseNotFound('<h1>Bad request.</h1>')
-    # query = urllib.unquote(query[0].replace("&q=", ''))
-    # query = query.split('&target=')[0]
-    # query = query.split('&key=')[0]
-    # query = fix_plus_url(query)
-    # if not original.endswith(query):
-    #     # Original has been intersepted
-    #     pass
+    # original = request.GET.get('q', None)
+    query = re.findall(r'&q=[^⑳❾]+', request.build_absolute_uri())
+    if not query:
+        return HttpResponseNotFound('<h1>Bad request.</h1>')
+    original = urllib.unquote(query[0].replace("&q=", ''))
+    original = original.split('&target=')[0]
+    original = original.split('&key=')[0]
+    original = fix_plus_url(original)
 
     if key != 'AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc':
         return HttpResponseNotFound('<h1>Key not found.</h1>')

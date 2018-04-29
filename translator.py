@@ -11,7 +11,7 @@ from texts.models import LenguaText, OriginalText, SmartText
 
 q_template = '&q={}'
 WEB_URL_REGEX = r'(([ ,\.。។।။]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ,\.。។।။]+)?|(([ ,\.。។।။]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ,\.。។।။]+)?))'
-NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9]+([A-Z\-:=_]+)?)'
+NUMBERS_REGEX = r'(([A-Z\-:=_]+)?[0-9\+]+([A-Z\-:=_]+)?)'
 DOTS_REGEX = re.compile(r'(\<br\>|[\.。។।။]+ ?)')
 MARKS_REGEX = re.compile(r'( ?[?？؟՞፧!]+ ?)')
 TRANSLATABLE = 'text'
