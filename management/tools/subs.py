@@ -147,7 +147,7 @@ def sync_keys_to_languages(subtitle_dict, orderby=OrderBy.frmto):
 
 
 def create_json_from_folder(dir, sort):
-    pass
+    get_folder_data(dir, sort)
 
 
 def insert_lengua_text(dict):
