@@ -36,6 +36,11 @@ class OrderBy:
 
 
 BASE_DIR = 'management/tools/tmps'
+BASE_JSON_DIR = 'management/tools/jsons'
+
+
+def get_import_options():
+    return os.listdir(BASE_JSON_DIR)
 
 
 def get_options():
@@ -110,7 +115,7 @@ def sync_keys_to_languages(subtitle_dict, orderby=OrderBy.frmto):
     print("...")
     en = subtitle_dict.get('en', None)
     if not en:
-        print("No english subs to work with")
+        print("No english jsons to work with")
 
     del subtitle_dict['en']
     strength = {}
@@ -141,5 +146,13 @@ def sync_keys_to_languages(subtitle_dict, orderby=OrderBy.frmto):
     return result
 
 
+def create_json_from_folder(dir, sort):
+    pass
+
+
 def insert_lengua_text(dict):
     pass
+
+
+def get_json(name):
+    return None

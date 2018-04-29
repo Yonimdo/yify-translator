@@ -41,15 +41,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dir = options.get('dir')
         imp = options.get('import')
-        if dir is None and imp in None:
+        if dir is None and imp is None:
             print("Options:\n")
-            print("\t{}--dir")
+            print("\t--dir\n\t\t",end="")
             print("\n\t\t".join(subs.get_options()))
-            print("\n")
-            print("\t{}--import")
-            print("\n\t\t".join(subs.get_options()))
-            print("\n")
+            print("\t--import\n\t\t",end="")
+            print("\n\t\t".join(subs.get_import_options()))
             return
+
+        if imp:
+            subs.insert_lengua_text(subs.get_json(imp))
+
         order = options.get('order')
         results = subs.get_folder_data(dir, OrderBy.getsort(order))
         pass

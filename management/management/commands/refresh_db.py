@@ -13,21 +13,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         texts = LenguaText.objects.all()
+
+        # remove all funny numbers. 
         for text_origin in texts:
             try:
-                en = text_origin.get_text()
-
-
-
-
-                languages = text_origin.get_list()
-                for key in languages:
-                    text = languages[key]
-                    s_text = SmartText()
-                    s_text.text_origin = text_origin
-                    s_text.language = key
-                    s_text.text = text
-                    s_text.save()
-
+                if '1818' in text_origin:
+                    text_origin.remove()
             except Exception as e:
                 text_origin.delete()
