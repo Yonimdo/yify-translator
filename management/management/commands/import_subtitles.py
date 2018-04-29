@@ -13,8 +13,12 @@ from texts.models import LenguaText, OriginalText, SmartText
 
 class Command(BaseCommand):
     help = '''
-        Translate from subtitle!
-        Please pick a folder you have imported and see the generated file
+ Translate from subtitle!
+ Please pick a folder you have imported and see the generated file
+ Or check its log in the md file
+ --import: Push json to database
+ --dir: Create a json from dir
+ --sort: Index the Subtitle by [fromto(DEFAULT), pk,from,to, all] may produce variations!!!
     '''
 
     def add_arguments(self, parser):
@@ -22,7 +26,7 @@ class Command(BaseCommand):
             '--import',
             action='store',
             dest='import',
-            help='Create a json from dir',
+            help='Push json to database',
         )
         parser.add_argument(
             '--dir',
@@ -42,6 +46,7 @@ class Command(BaseCommand):
         dir = options.get('dir')
         imp = options.get('import')
         if dir is None and imp is None:
+            print(self.help)
             print("Options:\n")
             print("\t--dir\n\t\t",end="")
             print("\n\t\t".join(subs.get_options()))
