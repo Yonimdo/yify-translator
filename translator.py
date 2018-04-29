@@ -325,7 +325,7 @@ def translate_with_smart_cache(log, key, original, target):
             smart = SmartText.objects.filter(text=en_result)
             if len(smart) == 0:
                 if from_language == target:
-                    return return_numbers(log, original, numbers)
+                    return return_numbers(log, gt_result, numbers)
                 text = LenguaText()
                 text.uuid = uuid.uuid4()
                 text.add_translation(en_result, 'en')

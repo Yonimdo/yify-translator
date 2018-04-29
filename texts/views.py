@@ -10,6 +10,7 @@ from dauditlog.views import logit
 from texts.models import Suggestion
 from translator import translate as lenuga_translate
 
+
 @logit()
 @csrf_exempt
 def translate(request, log):
@@ -28,7 +29,6 @@ def translate(request, log):
     original = urllib.unquote(query[0].replace("&q=", ''))
     original = original.split('&target=')[0]
     original = original.split('&key=')[0]
-    original =  html.escape(original)
 
     if key != 'AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc':
         return HttpResponseNotFound('<h1>Key not found.</h1>')
