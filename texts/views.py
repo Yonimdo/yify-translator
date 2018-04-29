@@ -19,7 +19,7 @@ def fix_plus_url(original):
     ms = re.findall(r'([\w]([\+]{2})[\w])', original)[::-1]
     while len(ms):
         m = ms.pop()
-        original = original.replace(m[0], "{} + {}".format(m[0][0], m[0][-1]))
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]))
 
     ms = re.findall(r'([[a-zA-Z]([\+])[a-zA-Z])', original)[::-1]
     while len(ms):
