@@ -39,17 +39,7 @@ def fix_plus_url(original):
         original = original.replace(m[0], str, 1)
 
     ms = re.findall(r'([\+]{2})', original)[::-1]
-    while len(ms):
-        m = ms.pop()
-        str = m[0].replace("+", " + ")
-
-<< << << < HEAD
-original = original.replace(m[0], str)
-
-== == == =
-original = original.replace(m[0], str, 1)
->> >> >> > dev
-return original
+    return original
 
 
 @logit()
