@@ -77,57 +77,61 @@ def search_subtitle(query):
 
 
 def get_subtitles(url):
-    '''Find all subtitles url for the movie.'''
-    # get webpage content for this url
-    text = get(url)
+    result = None
+    try:
+        '''Find all subtitles url for the movie.'''
+        # get webpage content for this url
+        text = get(url)
 
-    # save english subtitles
-    subs = []
-    title = re.search(r'## (.+)', text)
-    if title:
-        title = normalize_filename(title.group(1))
-    else:
-        title = uuid.uuid4()
-    text = text.split('#### All subtitles:')[-1]
-    text = text.split('#### Select favourite languages')[0]
-    text = text.split('#### Trailer:')[0]
-    text = text.split('---|---|---|---|---|---')[1]
-
-    text.replace("\n", " ")
-    # find upvote count, subtitle language and subtitle link
-    subtitles = re.findall(SUB_RE, text)
-    if not subtitles:
-        return None
-    subs = []
-    while subtitles:
-        upvote, language, link = subtitles.pop()
-
-        subs.append({
-            'up': upvote,
-            'link': link.replace('\n', ''),
-            'language': language
-        })
-    # sort list by upvote count
-    subs.sort(key=lambda x: int(x['up']), reverse=True)
-    langs = []
-    # we only want the best
-    ctr = 0
-    while ctr < len(subs):
-        if subs[ctr]['language'] in langs:
-            del subs[ctr]
+        # save english subtitles
+        subs = []
+        title = re.search(r'## (.+)', text)
+        if title:
+            title = normalize_filename(title.group(1))
         else:
-            langs.append(subs[ctr]['language'])
-            ctr += 1
-    subs = [(sub, title, Queue()) for sub in subs]
-    threads = []
-    for sub in subs:
-        t = Thread(target=get_subtitle_thread, args=sub)
-        threads.append(t)
-        t.start()
-    for t in threads:
-        t.join()
-    # only download subtitle which has the most upvote count
-    result = [(sub['language'], queue.get()) for sub, des, queue in subs]
+            title = uuid.uuid4()
+        text = text.split('#### All subtitles:')[-1]
+        text = text.split('#### Select favourite languages')[0]
+        text = text.split('#### Trailer:')[0]
+        text = text.split('---|---|---|---|---|---')[1]
+
+        text.replace("\n", " ")
+        # find upvote count, subtitle language and subtitle link
+        subtitles = re.findall(SUB_RE, text)
+        if not subtitles:
+            return None
+        subs = []
+        while subtitles:
+            upvote, language, link = subtitles.pop()
+
+            subs.append({
+                'up': upvote,
+                'link': link.replace('\n', ''),
+                'language': language
+            })
+        # sort list by upvote count
+        subs.sort(key=lambda x: int(x['up']), reverse=True)
+        langs = []
+        # we only want the best
+        ctr = 0
+        while ctr < len(subs):
+            if subs[ctr]['language'] in langs:
+                del subs[ctr]
+            else:
+                langs.append(subs[ctr]['language'])
+                ctr += 1
+        subs = [(sub, title, Queue()) for sub in subs]
+        threads = []
+        for sub in subs:
+            t = Thread(target=get_subtitle_thread, args=sub)
+            threads.append(t)
+            t.start()
+        for t in threads:
+            t.join()
+        # only download subtitle which has the most upvote count
+        result = [(sub['language'], queue.get()) for sub, des, queue in subs]
+    except Exception as e:
+        pass
     return result
 
 

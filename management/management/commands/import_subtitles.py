@@ -41,10 +41,18 @@ class Command(BaseCommand):
             default='fromto',
             help='Index the Subtitle by [fromto(DEFAULT), pk,from,to, all] may produce variations!!!',
         )
+        parser.add_argument(
+            '--all',
+            action='store_true',
+            dest='all',
+            default=False,
+            help='Create a json to all folders',
+        )
 
     def handle(self, *args, **options):
         dir = options.get('dir')
         imp = options.get('import')
+        all = options.get('all')
         if dir is None and imp is None:
             print(self.help)
             print("Options:\n")
@@ -52,11 +60,15 @@ class Command(BaseCommand):
             print("\n\t\t".join(subs.get_options()))
             print("\t--import\n\t\t", end="")
             print("\n\t\t".join(subs.get_import_options()))
-            return
+
 
         order = options.get('order')
         if imp:
             subs.insert_lengua_text(subs.get_json(imp, order))
 
-        subs.create_json_from_folder(dir, OrderBy.getsort(order))
-        pass
+        if all:
+            folders = subs.get_options()
+            while folders:
+                subs.create_json_from_folder(folders.pop(), OrderBy.getsort(order))
+        else:
+            subs.create_json_from_folder(dir, OrderBy.getsort(order))
