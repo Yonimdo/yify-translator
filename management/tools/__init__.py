@@ -13,10 +13,12 @@ def sublog(text, doc=None):
 
 
 class SubDoc:
-    lines = []
-
+    def __init__(self):
+        self.lines = []
     def log(self, line, type=NORMAL):
         self.lines.append(type.format(line))
 
     def get(self):
-        return '\n'.join(self.lines)
+        l = '\n'.join(self.lines)
+        self.lines = []
+        return l

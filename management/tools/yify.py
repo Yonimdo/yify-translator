@@ -18,25 +18,28 @@ ANCHER_LANGUAGE = "English"
 
 def get(url):
     '''Retrieve page content and use html2text to convert into readable text.'''
+    text = ""
+    try:
     # get webpage content for this url
-    r = requests.get(url)
+        r = requests.get(url)
     # raise exception if status code is not 200
-    r.raise_for_status()
+        r.raise_for_status()
 
     # use html2text to transfer html to readable text
-    h = HTML2Text()
-    h.ignore_links = False
-    text = h.handle(r.text)
-
+        h = HTML2Text()
+        h.ignore_links = False
+        text = h.handle(r.text)
+    except Exception as e:
+        pass
     return text
 
 
 def normalize_filename(title):
-    title = title.replace('\\', ' ').replace('/', ' ')
-    title = title.replace(',', ' ')
-    title = title.replace('<', ' ').replace('>', ' ')
-    title = title.replace('*', ' ').replace('?', ' ')
-    title = title.replace('"', ' ').replace(':', ' ')
+    title = title.replace('\\', '_').replace('/', '_')
+    title = title.replace(',', '_')
+    title = title.replace('<', '_').replace('>', '_')
+    title = title.replace('*', '_').replace('?', '_')
+    title = title.replace('"', '_').replace(': ', '_').replace(':', '_')
     return title
 
 
@@ -190,9 +193,12 @@ def get_subtitle(url, destination, target):
             return []
         data = []
         if files:
-            zf_filename = '{}/{}'.format(folder, files[0].filename)
+            zf_filename = '{}/{}'.format(folder, normalize_filename(files[0].filename))
             zf_target = "{}/{}".format(folder.replace('/{}'.format(uid), ''),
                                        normalize_filename("{}-{}".format(target, zf_filename.split('/')[-1])))
-            copyfile(zf_filename, zf_target)
-            rmtree(folder, ignore_errors=True)
+            try:
+                copyfile(zf_filename, zf_target)
+                rmtree(folder, ignore_errors=True)
+            except Exception as e:
+                pass
         return data

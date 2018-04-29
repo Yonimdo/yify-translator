@@ -83,6 +83,13 @@ def get_folder_data(dir, sort, doc=None):
         else:
             language_code = language_code['code']
         try:
+            with open(path, 'r',encoding="utf-8") as f:
+                b = f.read()
+                result[language_code] = format_subtitle(b)
+                continue
+        except Exception as e:
+            sublog("language {} Exception {}".format(language_code, e), doc)
+        try:
             with open(path, 'rb') as f:
                 b = f.read()
                 type = chardet.detect(b)
