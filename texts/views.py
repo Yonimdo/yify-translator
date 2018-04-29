@@ -12,33 +12,36 @@ from translator import translate as lenuga_translate
 
 def fix_plus_url(original):
     ms = re.findall(r'([\+]{4,})', original)[::-1]
+    while len(ms):
+        m = ms.pop()[0]
+        original = original.replace(m, " " * len(m), 1)
 
     ms = re.findall(r'([\w]([\+]{3})[\w])', original)[::-1]
     while len(ms):
         m = ms.pop()
-        original = original.replace(m[0], "{} + {}".format(m[0][0], m[0][-1]),1)
+        original = original.replace(m[0], "{} + {}".format(m[0][0], m[0][-1]), 1)
 
     ms = re.findall(r'([\w]([\+]{2})[\w])', original)[::-1]
     while len(ms):
         m = ms.pop()
-        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]),1)
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
 
     ms = re.findall(r'([[a-zA-Z]([\+])[a-zA-Z])', original)[::-1]
     while len(ms):
         m = ms.pop()
-        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]),1)
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
 
     ms = re.findall(r'([\+]{3})', original)[::-1]
     while len(ms):
         m = ms.pop()
         str = m[0].replace("+", " + ")
-        original = original.replace(m[0], str,1)
+        original = original.replace(m[0], str, 1)
 
     ms = re.findall(r'([\+]{2})', original)[::-1]
     while len(ms):
         m = ms.pop()
         str = m[0].replace("+", " + ")
-        original = original.replace(m[0], str,1)
+        original = original.replace(m[0], str, 1)
     return original
 
 
