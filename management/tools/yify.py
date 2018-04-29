@@ -13,6 +13,7 @@ from html2text import HTML2Text
 BASE_DIR = 'management/tools/tmps'
 BASE_URL = 'http://www.yifysubtitles.com'
 SUB_RE = r'(\d+)\| (\w+)\|[^/]+([^)]+)\)'
+ANCHER_LANGUAGE = "English"
 
 
 def get(url):
@@ -32,7 +33,7 @@ def get(url):
 
 def normalize_filename(title):
     title = title.replace('\\', ' ').replace('/', ' ')
-    title = title.replace(',', ' ').replace('.', ' ')
+    title = title.replace(',', ' ')
     title = title.replace('<', ' ').replace('>', ' ')
     title = title.replace('*', ' ').replace('?', ' ')
     title = title.replace('"', ' ').replace(':', ' ')
@@ -162,11 +163,7 @@ def get_subtitle(url, destination, target):
         uid = uuid.uuid4()
 
         folder = '{}/{}/{}'.format(BASE_DIR, destination, uid)
-        try:
-            if not os.path.exists(folder):
-                os.makedirs(folder)
-        except FileExistsError as e:
-            pass
+        os.makedirs(folder, exist_ok=True)
         # use last part of url as file name
         filename = str(uid) + link.split('/')[-1]
         content = requests.get(link)

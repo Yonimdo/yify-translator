@@ -33,5 +33,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         search = options.get('movie')
-        limit = options.get('limit')
+        limit = int(options.get('limit'))
         results = yify.search_subtitles(search, limit)
