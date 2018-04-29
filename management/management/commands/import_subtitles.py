@@ -39,11 +39,15 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-
         dir = options.get('dir')
-        if dir is None:
+        imp = options.get('import')
+        if dir is None and imp in None:
             print("Options:\n")
-            print("\n".join(subs.get_options()))
+            print("\t{}--dir")
+            print("\n\t\t".join(subs.get_options()))
+            print("\n")
+            print("\t{}--import")
+            print("\n\t\t".join(subs.get_options()))
             print("\n")
             return
         order = options.get('order')
