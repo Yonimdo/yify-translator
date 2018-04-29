@@ -1,6 +1,7 @@
 import re
 
 from management.tools import yify, subs
+from management.tools.subs import OrderBy
 from translator import NUMBERS_REGEX
 
 from django.contrib.auth.models import User
@@ -32,6 +33,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        search = options.get('movie')
-        results = subs.get_folder_data(search)
+        dir = options.get('dir')
+        order = options.get('order')
+        results = subs.get_folder_data(dir, OrderBy.getsort(order))
         pass

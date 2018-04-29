@@ -12,6 +12,10 @@ from translator import translate as lenuga_translate
 
 def fix_plus_url(original):
     original.strip()
+    while original.endswith("+"):
+        original = original[0:-1]
+        original.strip()
+    
     ms = re.findall(r'([\+]{4,})', original)[::-1]
     while len(ms):
         m = ms.pop()[0]

@@ -18,14 +18,27 @@ class OrderBy:
     def frmto(pk, frm, to, text):
         return "{}->{}".format(frm, to), text
 
-    def all(self, pk, frm, to, text):
+    def all(pk, frm, to, text):
         return "{}:{}->{}".format(pk, frm, to), text
+
+    def getsort(s):
+        s = s.strip()
+        if s == 'pk':
+            return OrderBy.pk
+        elif s == 'from':
+            return OrderBy.frm
+        elif s == 'to':
+            return OrderBy.to
+        elif s == 'fromto':
+            return OrderBy.frmto
+        elif s == 'all':
+            return OrderBy.all
 
 
 BASE_DIR = 'management/tools/tmps'
 
 
-def get_folder_data(search):
+def get_folder_data(search, sort):
     result = {}
     folder = "{}/{}".format(BASE_DIR, search)
     if not os.path.isdir(folder):
