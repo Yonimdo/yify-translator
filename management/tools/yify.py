@@ -193,14 +193,5 @@ def get_subtitle(url, destination, target):
             zf_target = "{}/{}".format(folder.replace('/{}'.format(uid), ''),
                                        normalize_filename("{}-{}".format(target, zf_filename.split('/')[-1])))
             copyfile(zf_filename, zf_target)
-            # try:
-            #     with open(zf_filename, 'r', encoding='cp1251') as f:
-            #         data = f.read()
-            # except UnicodeDecodeError as e:
-            #     try:
-            #         with open(zf_filename, 'r', encoding='utf8') as f:
-            #             data = f.read()
-            #     except UnicodeDecodeError as e:
-            #         pass
             rmtree(folder, ignore_errors=True)
         return data

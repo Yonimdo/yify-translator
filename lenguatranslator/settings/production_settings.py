@@ -146,3 +146,5 @@ LANGUAGES = [
     ("yo", "Yoruba", "."),
     ("zu", "Zulu", "."),
 ]
+languages_dict = {code: {'language': language} for code, language, dot_sign in LANGUAGES}
+dict_languages = {language.lower(): {'code': code} for code, language, dot_sign in LANGUAGES}
