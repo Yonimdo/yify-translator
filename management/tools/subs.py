@@ -3,7 +3,7 @@ import json
 import os
 import re
 import chardet
-from  lenguatranslator.settings import dict_languages
+from lenguatranslator.settings import dict_languages
 from management.tools import SubDoc
 
 
@@ -83,7 +83,7 @@ def get_folder_data(dir, sort, doc=None):
         else:
             language_code = language_code['code']
         try:
-            with open(path, 'r',encoding="utf-8") as f:
+            with open(path, 'r', encoding="utf-8") as f:
                 b = f.read()
                 result[language_code] = format_subtitle(b)
                 continue
@@ -94,24 +94,24 @@ def get_folder_data(dir, sort, doc=None):
                 b = f.read()
                 type = chardet.detect(b)
                 a = str(b.decode(type['encoding']).encode('utf8'), 'utf8')
-                sublog("Report on {}:{}".format(language_code,type), doc)
+                sublog("Report on {}:{}".format(language_code, type), doc)
                 result[language_code] = format_subtitle(a)
                 continue
         except Exception as e:
             sublog("language {} Exception {}".format(language_code, e), doc)
-    return sync_keys_to_languages(result, orderby=sort, doc=doc)
+    return result
 
 
 def format_subtitle(raw_str, orderby=OrderBy.frmto, lines_pattern='\n\n',
                     single_pattern=r'(?P<full>(?P<pk>\d+)\n(?P<from>[\d:,]+)[ --> ]+(?P<to>[\d:,]+))', doc=None):
     result = {}
-    lines = raw_str.replace('\r','').split("\n\n")
+    lines = raw_str.replace('\r', '').split("\n\n")
     for line in lines:
         m = re.match(single_pattern, line)
         if m:
             full, pk, frm, to = m.group('full'), m.group('pk'), m.group('from'), m.group('to')
             line = line.replace(full, "").strip()
-            line = html.unescape(line).strip()
+            line = html.unescape(line).strip().replace("\n", " ")
             key, value = orderby(pk, frm, to, line)
             result[key] = value
     return result
@@ -156,15 +156,42 @@ def sync_keys_to_languages(subtitle_dict, orderby=OrderBy.frmto, doc=None):
     return result
 
 
+def unpack_to_csv(result):
+    keys = result.keys()
+    headers = []
+    for key in keys:
+        val = result[key]
+        headers = headers + list(val.keys())
+    headers = set(headers)
+    lines = []
+    lines.append(','.join(headers))
+    for key in keys:
+        line = []
+        for header in headers:
+            line.append(result[key].get(header, ''))
+        lines.append(r"'{}'".format(r"','".join(line)))
+    return lines
+
+
+def create_html_page(title, sort, csv, doc, doc_errors):
+    pass
+
+
 def create_json_from_folder(dir, sort):
     doc = SubDoc()
     folder = "{}/{}/{}/".format(BASE_JSON_DIR, dir, sort.__name__)
     data = get_folder_data(dir, sort, doc)
+    result = sync_keys_to_languages(data, orderby=sort, doc=doc)
     makedir(folder)
-    with open("{}data.json".format(folder), 'w', encoding='utf8') as f:
-        f.write(json.dumps(data))
     with open("{}doc.txt".format(folder), 'w', encoding='utf8') as f:
         f.write(doc.get())
+    if result:
+        csv = unpack_to_csv(result)
+        # html = create_html_page(dir, sort, csv, doc, doc_errors)
+        with open("{}data.csv".format(folder), 'w', encoding='utf8') as f:
+            f.write("\n".join(csv))
+        with open("{}data.json".format(folder), 'w', encoding='utf8') as f:
+            f.write(json.dumps(result))
     return
 
 
