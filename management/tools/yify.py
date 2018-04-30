@@ -10,28 +10,12 @@ from shutil import copyfile, rmtree
 import requests
 from html2text import HTML2Text
 
+from management.management.commands import get
+
 BASE_DIR = 'management/tools/tmps'
 BASE_URL = 'http://www.yifysubtitles.com'
 SUB_RE = r'(\d+)\| (\w+)\|[^/]+([^)]+)\)'
 ANCHER_LANGUAGE = "English"
-
-
-def get(url):
-    '''Retrieve page content and use html2text to convert into readable text.'''
-    text = ""
-    try:
-    # get webpage content for this url
-        r = requests.get(url)
-    # raise exception if status code is not 200
-        r.raise_for_status()
-
-    # use html2text to transfer html to readable text
-        h = HTML2Text()
-        h.ignore_links = False
-        text = h.handle(r.text)
-    except Exception as e:
-        pass
-    return text
 
 
 def normalize_filename(title):
