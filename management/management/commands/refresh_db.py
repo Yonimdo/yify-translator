@@ -18,7 +18,6 @@ class Command(BaseCommand):
         for orig in texts:
             try:
                 if '+' in orig.original:
-                    orig.remove()
+                    orig.delete()
             except Exception as e:
-                print("Error at {}".format(orig) )
-
+                print("Error {} at {}".format(e, orig))
