@@ -19,7 +19,7 @@ class Command(BaseCommand):
             try:
                 if '<br>' in t.values:
                     t.values.replace("<br>"," ")
-                if not t.values.strip():
-                    t.delete()
+                    # it knows
+                    t.save()
             except Exception as e:
                 print("Error {} at {}".format(e, t))
