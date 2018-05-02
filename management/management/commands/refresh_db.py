@@ -18,8 +18,8 @@ class Command(BaseCommand):
         for t in texts:
             try:
                 if '<br>' in t.values:
-                    t.values.replace("<br>"," ")
-                    # it knows
+                    t.values = t.values.replace("<br>"," ")
+                    # you are right...
                     t.save()
             except Exception as e:
                 print("Error {} at {}".format(e, t))
