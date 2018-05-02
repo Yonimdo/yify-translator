@@ -1,4 +1,6 @@
 import re
+
+import translator
 import translator as trns
 
 from django.contrib.auth.models import User
@@ -18,8 +20,15 @@ class Command(BaseCommand):
         for t in texts:
             try:
                 if '<br>' in t.values:
-                    t.values = t.values.replace("<br>"," ")
-                    # you are right...
+                    t.values = t.values.replace("<br>", " ")
                     t.save()
+            except Exception as e:
+                print("Error {} at {}".format(e, t))
+
+        texts = LenguaText.objects.all()
+        for t in texts:
+            try:
+                if re.search(translator.DOTS_REGEX,t.values):
+                    t.delete()
             except Exception as e:
                 print("Error {} at {}".format(e, t))
