@@ -13,11 +13,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        texts = OriginalText.objects.all()
+        texts = LenguaText.objects.all()
         # remove all funny numbers.
-        for orig in texts:
+        for t in texts:
             try:
-                if '+' in orig.original:
-                    orig.delete()
+                if '<br>' in t.values and not t.values.endswith('<br>'):
+                    t.delete()
             except Exception as e:
-                print("Error {} at {}".format(e, orig))
+                print("Error {} at {}".format(e, t))
