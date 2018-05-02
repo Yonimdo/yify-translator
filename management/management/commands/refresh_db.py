@@ -12,17 +12,13 @@ class Command(BaseCommand):
     help = "Normalize the db"
 
     def handle(self, *args, **options):
-        texts = LenguaText.objects.all()
 
-        # remove all funny numbers. 
-        for text_origin in texts:
+        texts = OriginalText.objects.all()
+        # remove all funny numbers.
+        for orig in texts:
             try:
-                if '+' in text_origin:
-                    text_origin.remove()
+                if '+' in orig.original:
+                    orig.remove()
             except Exception as e:
-                text_origin.delete()
-            try:
-                if '1818' in text_origin:
-                    text_origin.remove()
-            except Exception as e:
-                text_origin.delete()
+                print("Error at {}".format(orig) )
+
