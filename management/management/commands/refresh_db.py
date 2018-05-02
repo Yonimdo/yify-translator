@@ -17,7 +17,9 @@ class Command(BaseCommand):
         # remove all funny numbers.
         for t in texts:
             try:
-                if '<br>' in t.values and not t.values.endswith('<br>'):
-                    t.delete()
+                if '<br>' in t.values:
+                    t.values.replace("<br>"," ")
+                    # it knows
+                    t.save()
             except Exception as e:
                 print("Error {} at {}".format(e, t))
