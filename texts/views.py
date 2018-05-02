@@ -40,6 +40,11 @@ def fix_plus_url(original):
         m = ms.pop()
         original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
 
+    ms = re.findall(r'([^\d]([\+])[^\d])', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
+
     ms = re.findall(r'([\+]{3})', original)[::-1]
     while len(ms):
         m = ms.pop()
