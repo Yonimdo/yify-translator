@@ -17,6 +17,11 @@ class Command(BaseCommand):
         # remove all funny numbers. 
         for text_origin in texts:
             try:
+                if '+' in text_origin:
+                    text_origin.remove()
+            except Exception as e:
+                text_origin.delete()
+            try:
                 if '1818' in text_origin:
                     text_origin.remove()
             except Exception as e:
