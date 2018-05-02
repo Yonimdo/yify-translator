@@ -11,6 +11,59 @@ from texts.models import Suggestion
 from translator import translate as lenuga_translate
 
 
+def fix_plus_url(original):
+    original.strip()
+    while original.endswith("+"):
+        original = original[0:-1]
+        original.strip()
+    while original.startswith("+"):
+        original = original[1:]
+        original.strip()
+
+    ms = re.findall(r'([\+]{4,})', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        original = original.replace(m, " " * len(m), 1)
+
+    ms = re.findall(r'([^\d]([\+]{3})[^\d])', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        original = original.replace(m[0], "{} + {}".format(m[0][0], m[0][-1]), 1)
+
+    ms = re.findall(r'([^\d]([\+]{2})[^\d])', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
+
+    ms = re.findall(r'([^\d]([\+])[^\d])', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
+
+    ms = re.findall(r'([\+]{3})', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        str = m[0].replace("+", " + ")
+        original = original.replace(m[0], str, 1)
+
+    ms = re.findall(r'([\+]{2})', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        str = m[0].replace("+", " + ")
+        original = original.replace(m[0], str, 1)
+
+    ms = re.findall(r'([\d]([\+])[^\d])', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
+    ms = re.findall(r'([^\d]([\+])[\d])', original)[::-1]
+    while len(ms):
+        m = ms.pop()
+        original = original.replace(m[0], "{} {}".format(m[0][0], m[0][-1]), 1)
+
+    return original
+
+
 @logit()
 @csrf_exempt
 def translate(request, log):
@@ -29,7 +82,7 @@ def translate(request, log):
     original = urllib.unquote(query[0].replace("&q=", ''))
     original = original.split('&target=')[0]
     original = original.split('&key=')[0]
-
+    original = fix_plus_url(original)
     if key != 'AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc':
         return HttpResponseNotFound('<h1>Key not found.</h1>')
     if original is None or original == "":
