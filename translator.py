@@ -10,7 +10,7 @@ from django.http import HttpResponseNotFound
 from texts.models import LenguaText, OriginalText, SmartText
 
 q_template = '&q={}'
-WEB_URL_REGEX = r'(([ ,\.。។।။]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ,\.。។।။]+)?|(([ ,\.。។।။]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ,\.。។।။]+)?))'
+WEB_URL_REGEX = r'((\<br\>|[ ,\.。។।။]+)?(http|ftp|https?\:?\/?\/?)?([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?([ ,\.。។।။]+)?|(([ ,\.。។।။]+)?(content\:\/\/)([\w.,@?^=%&:/~+#-]+)([ ,\.。។।။]+)?))'
 NUMBERS_REGEX = r'(([0-9A-Z\-\+/:=_ */%₪]+)?[0-9]+([A-Z\-\+:=_ */%₪0-9]+)?)'
 DOTS_REGEX = re.compile(r'(\<br\>|[\.。។।။]+ ?)')
 MARKS_REGEX = re.compile(r'( ?[?？؟՞፧!]+ ?)')
