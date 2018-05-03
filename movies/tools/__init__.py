@@ -5,6 +5,9 @@ ERROR = '''
 '''
 NORMAL = "{}"
 
+BASE_DIR = 'management/tools/tmps'
+BASE_JSON_DIR = 'management/tools/jsons'
+
 
 def sublog(text, doc=None):
     if doc:

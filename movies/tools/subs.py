@@ -6,6 +6,8 @@ import chardet
 from lenguatranslator.settings import dict_languages
 from management.tools import SubDoc
 
+from movies.tools import BASE_JSON_DIR, BASE_DIR
+
 
 def sublog(text, doc=None):
     if doc:
@@ -47,9 +49,6 @@ class OrderBy:
         elif s == 'all':
             return OrderBy.all
 
-
-BASE_DIR = 'management/tools/tmps'
-BASE_JSON_DIR = 'management/tools/jsons'
 
 
 def get_import_options():

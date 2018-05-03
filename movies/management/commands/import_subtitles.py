@@ -10,6 +10,9 @@ from django.core.management.base import BaseCommand
 # ½ ¾
 from texts.models import LenguaText, OriginalText, SmartText
 
+en = "asdfasdvnsd;kfjvn'dflv,DS:fg.sd" \
+     "'fg.s"
+
 
 class Command(BaseCommand):
     help = '''

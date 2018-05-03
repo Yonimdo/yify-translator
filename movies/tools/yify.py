@@ -11,8 +11,8 @@ import requests
 from html2text import HTML2Text
 
 from management.management.commands import get
+from movies.tools import BASE_DIR
 
-BASE_DIR = 'management/tools/tmps'
 BASE_URL = 'http://www.yifysubtitles.com'
 SUB_RE = r'(\d+)\| (\w+)\|[^/]+([^)]+)\)'
 ANCHER_LANGUAGE = "English"
