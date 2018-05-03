@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'profile',
     'hello',
     'management',
+    'movies',
     'texts',
 ]
 

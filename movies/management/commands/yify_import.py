@@ -1,6 +1,6 @@
 import re
 
-from management.tools import yify
+from movies.tools import yify
 from translator import NUMBERS_REGEX
 
 from django.contrib.auth.models import User

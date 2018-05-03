@@ -4,7 +4,7 @@ import os
 import re
 import chardet
 from lenguatranslator.settings import dict_languages
-from management.tools import SubDoc
+from movies.tools import SubDoc
 
 from movies.tools import BASE_JSON_DIR, BASE_DIR
 
@@ -198,5 +198,5 @@ def insert_lengua_text(dict):
     pass
 
 
-def get_json(name):
+def get_json(search, order):
     return None

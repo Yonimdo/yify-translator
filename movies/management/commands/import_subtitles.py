@@ -1,7 +1,7 @@
 import re
 
-from management.tools import yify, subs
-from management.tools.subs import OrderBy
+from movies.tools import yify, subs
+from movies.tools.subs import OrderBy
 from translator import NUMBERS_REGEX
 
 from django.contrib.auth.models import User

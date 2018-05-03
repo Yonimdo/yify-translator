@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block content %}
+
+<style type="text/css">
+html,body{
+    height:100%;
+    background-color:#0048BA;
+}
+    .container {
+    height:100%;
+    display: flex;
+    align-items:center;
+    justify-content:space-between;
+    }
+    .jumbotron,form {
+        display: flex;
+        flex-flow:column;
+        align-items:center;
+        justify-content:space-between;
+        background-color:white;
+        width:80%;
+        border: 0.2 Solid black;
+    }
+    form{
+    border:none;
+    }
+
+.blue-btn:hover,
+.blue-btn:active,
+.blue-btn:focus,
+.blue-btn {
+  background: transparent;
+  border: solid 1px #27a9e0;
+  border-radius: 3px;
+  color: #27a9e0;
+  font-size: 16px;
+  margin-bottom: 20px;
+  outline: none !important;
+  padding: 10px 20px;
+}
+
+.fileUpload {
+  position: relative;
+  overflow: hidden;
+  height: 43px;
+  margin-top: 0;
+}
+
+.fileUpload input.uploadlogo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0;
+  filter: alpha(opacity=0);
+  width: 100%;
+  height: 42px;
+}
+
+/*Chrome fix*/
+input::-webkit-file-upload-button {
+  cursor: pointer !important;
+  height: 42px;
+  width: 100%;
+}
+
+
+
+
+
+</style>
+<script src="{% static 'selectize.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'selectize.css' %}"/>
+
+<div class="container">
+    <div class="jumbotron">
+
+        <h2>Translate your file</h2>
+
+        <form method="post" enctype="multipart/form-data">
+
+            {% csrf_token %}
+            <label for="select-language">to:</label>
+            <select id="select-language" name="languages[]" multiple class="selectized"
+                    placeholder="Select languages..." tabindex="-1">
+                {%for lang, name, stop in languages %}
+                <option value="{{lang}}" selected="selected">{{name}}</option>
+                {%endfor%}
+            </select>
+
+
+            <div class="fileUpload blue-btn btn width100">
+                <span>Upload your file</span>
+                <input id="id_file" type="file" name="file"  class="uploadlogo"/>
+            </div>
+
+            <button type="submit">Translate</button>
+        </form>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function($) {
+
+  // Set selectize.js
+  $('#select-language').selectize({
+    maxItems: 104
+});
+  // Upload btn on change call function
+  $(".uploadlogo").change(function() {
+    var filename = readURL(this);
+    $(this).parent().children('span').html(filename);
+  });
+
+  // Read File and return value
+  function readURL(input) {
+    var url = input.value;
+    var ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
+    var path = $(input).val();
+    var filename = path.replace(/^.*\\/, "");
+    // $('.fileUpload span').html('Uploaded Proof : ' + filename);
+    return "Uploaded file : "+filename;
+  }
+  // Upload btn end
+
+});
+
+
+
+
+</script>
+{% endblock %}

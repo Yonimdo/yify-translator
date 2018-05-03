@@ -5,8 +5,8 @@ ERROR = '''
 '''
 NORMAL = "{}"
 
-BASE_DIR = 'management/tools/tmps'
-BASE_JSON_DIR = 'management/tools/jsons'
+BASE_DIR = 'movies/tools/tmps'
+BASE_JSON_DIR = 'movies/tools/jsons'
 
 
 def sublog(text, doc=None):
