@@ -4,7 +4,7 @@ import os
 import re
 import chardet
 from lenguatranslator.settings import dict_languages
-from movies.tools import SubDoc
+from movies.tools import SubDoc, get_encodings, EncodingError
 
 from movies.tools import BASE_JSON_DIR, BASE_DIR
 
@@ -50,18 +50,29 @@ class OrderBy:
             return OrderBy.all
 
 
-
 def get_import_options():
-    return os.listdir(BASE_JSON_DIR)
+    dirs = []
+    for dir in os.listdir(BASE_JSON_DIR):
+        errors = 0
+        with open("{}/{}/frmto/doc.txt".format(BASE_JSON_DIR, dir), 'r', encoding='utf8') as f:
+            errors = f.read().split('\n\n')[1]
+            errors = len(errors.split('\n'))
+        dirs.append((dir, errors))
+    return dirs
 
 
 def get_options():
     return os.listdir(BASE_DIR)
 
 
+def validate_encoding(file):
+    return True
+
+
 def get_folder_data(dir, sort, doc=None):
     result = {}
     folder = "{}/{}".format(BASE_DIR, dir)
+    sublog("Movie {} \n\n".format(dir), doc)
     if not os.path.isdir(folder):
         sublog("Movie is downloaded yet? or just spelling (Enter to folder name)", doc)
         return None
@@ -72,32 +83,33 @@ def get_folder_data(dir, sort, doc=None):
         language_code = dict_languages.get(name.split("-")[0].lower(), None)
         # If the extension of the file matches some text followed by ext...
         if not os.path.isfile(path):
-            sublog("Movie {} still has folders in it we are missing some data!", doc)
+            sublog("Movie {} still has folders in it we are missing some data!".format(name), doc)
             sublog("Please fix manually...", doc)
             continue
+        encodings = get_encodings(name.split("-")[0].lower())[::-1]
         sublog("{}:{}".format(name.split("-")[0], language_code), doc)
         if not language_code:
             sublog("An Unknown language {} continuing...".format(name.split("-")[0]), doc)
             continue
         else:
             language_code = language_code['code']
+        enco = None
         try:
-            with open(path, 'r', encoding="utf-8") as f:
-                b = f.read()
-                result[language_code] = format_subtitle(b)
-                continue
+            while encodings:
+                enco = encodings.pop()
+                with open(path, 'rb') as f:
+                    a = f.read().decode(enco)
+                    if 'utf8' != enco:
+                        sublog("Report on {}:{} by the encoding list ".format(language_code, enco), doc)
+                    a = format_subtitle(a)
+                    if not validate_encoding(a):
+                        raise EncodingError
+                    result[language_code] = a
+                    continue
         except Exception as e:
-            sublog("language {} Exception {}".format(language_code, e), doc)
-        try:
-            with open(path, 'rb') as f:
-                b = f.read()
-                type = chardet.detect(b)
-                a = str(b.decode(type['encoding']).encode('utf8'), 'utf8')
-                sublog("Report on {}:{}".format(language_code, type), doc)
-                result[language_code] = format_subtitle(a)
-                continue
-        except Exception as e:
-            sublog("language {} Exception {}".format(language_code, e), doc)
+            sublog("language {} Exception {} on encoding {}".format(language_code, e, enco), doc)
+        except IndexError as e:
+            sublog("No known encodings for languge {}.".format(language_code), doc)
     return result
 
 
@@ -183,7 +195,8 @@ def create_json_from_folder(dir, sort):
     result = sync_keys_to_languages(data, orderby=sort, doc=doc)
     makedir(folder)
     with open("{}doc.txt".format(folder), 'w', encoding='utf8') as f:
-        f.write(doc.get())
+        doc = doc.get()
+        f.write(doc)
     if result:
         csv = unpack_to_csv(result)
         # html = create_html_page(dir, sort, csv, doc, doc_errors)
@@ -198,5 +211,25 @@ def insert_lengua_text(dict):
     pass
 
 
-def get_json(search, order):
-    return None
+def get_csv(dir, sort):
+    folder = "{}/{}/{}/".format(BASE_JSON_DIR, dir, sort.__name__)
+    result = None
+    with open("{}data.csv".format(folder), 'r', encoding='utf8') as f:
+        result = f.read()
+    return result
+
+
+def get_json(dir, sort=OrderBy.frmto):
+    folder = "{}/{}/{}/".format(BASE_JSON_DIR, dir, sort.__name__)
+    result = None
+    with open("{}data.json".format(folder), 'r', encoding='utf8') as f:
+        result = json.loads(f.read())
+    return result
+
+
+def get_doc(dir, sort=OrderBy.frmto):
+    folder = "{}/{}/{}/".format(BASE_JSON_DIR, dir, sort.__name__)
+    result = None
+    with open("{}doc.txt".format(folder), 'r', encoding='utf8') as f:
+        result = f.read()
+    return result
