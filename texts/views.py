@@ -88,7 +88,7 @@ def translate(request, log):
     original = original.split('&target=')[0]
     original = original.split('&key=')[0]
     original = fix_plus_url(original)
-    if key != 'AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc':
+    if key != 'AIzaSyAERqmktA7cYPRV31TF6OPMxlHf1yHAwSQ':
         return HttpResponseNotFound('<h1>Key not found.</h1>')
     if original is None or original == "":
         return HttpResponseNotFound('<h1>Bad request.</h1>')

@@ -469,7 +469,7 @@ def get_google_result(log, key, q, target):
         arr = True
         q = "&q=".join(q)
     gt_result = r.get(
-        r'https://www.googleapis.com/language/translate/v2?key=AIzaSyDSiZkiZX4_HLXlGwrVTQv1WmUgqUbZbFc&target={}&q={}'.format(
+        r'https://www.googleapis.com/language/translate/v2?key=AIzaSyAERqmktA7cYPRV31TF6OPMxlHf1yHAwSQ&target={}&q={}'.format(
             target, q))
     if not gt_result.ok:
         return HttpResponseNotFound("<h1>Google Translate Error</h1><br><br>{}".format(gt_result.content))
